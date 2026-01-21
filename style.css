@@ -52,6 +52,8 @@ header {
 }
 
 /* AGENDA */
+/* --- MODIFICHE PER COMPATIBILITÀ MOBILE --- */
+
 .hour-row { 
     display: flex; 
     border-bottom: 1px solid var(--secondary-bg); 
@@ -59,7 +61,7 @@ header {
     position: relative; 
     padding-left: 10px;
     transition: background 0.3s ease;
-}
+    min-height: 50px; /* Altezza minima per facilitare il tocco */}
 
 /* Effetto illuminazione riga importante */
 .hour-row.important {
@@ -72,7 +74,52 @@ textarea { flex: 1; border: none; resize: none; outline: none; background: trans
 textarea.completed { text-decoration: line-through; opacity: 0.5; }
 
 /* Azioni riga oraria */
-.row-actions { display: none; align-items: center; gap: 12px; padding-right: 5px; }
+/* Mostra azioni se la riga è focalizzata O se ha la classe 'active-actions' (per mobile) */
+.row-actions { 
+    display: none; 
+    align-items: center; 
+    gap: 8px; 
+    padding-right: 10px; 
+    height: 100%;
+}
+/* Su PC usiamo hover e focus-within */
+@media (underline: none) {
+    .hour-row:hover .row-actions,
+    .hour-row:focus-within .row-actions { display: flex; }
+}
+
+/* Forza la visibilità se il textarea è attivo (funziona meglio su mobile) */
+.hour-row:focus-within .row-actions, 
+.hour-row:active .row-actions { 
+    display: flex !important; 
+}
+
+/* Ingrandiamo l'area di tocco dei bottoni senza cambiare la dimensione dell'icona */
+.action-icon { 
+    color: var(--gray-text); 
+    cursor: pointer; 
+    display: flex; 
+    align-items: center; 
+    justify-content: center;
+    background: none; 
+    border: none; 
+    padding: 10px 5px; /* Area di tocco aumentata */
+    min-width: 35px;
+    min-height: 35px;
+    touch-action: manipulation;
+}
+
+textarea { 
+    flex: 1; 
+    border: none; 
+    resize: none; 
+    outline: none; 
+    background: transparent; 
+    padding: 15px 5px; /* Più spazio per il testo */
+    font-size: 16px; /* Previene lo zoom automatico su iOS */
+    font-family: inherit; 
+    color: var(--text-color); 
+}
 .hour-row:focus-within .row-actions { display: flex; }
 .action-icon { color: var(--gray-text); cursor: pointer; display: flex; align-items: center; background: none; border: none; padding: 0; }
 
