@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Agenda Minimal 2026</title>
+    <link rel="stylesheet" href="style.css">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Roboto+Mono&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+    <link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#007aff">
+
+</head>
+<body>
+
+<header>
+    <button id="prevDay" class="nav-btn">←</button>
+    <div id="currentDateDisplay" class="date-title">Caricamento...</div>
+    <div class="header-right">
+        <button id="open-settings" class="icon-btn">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+        </button>
+        <button id="nextDay" class="nav-btn">→</button>
+    </div>
+</header>
+
+<main id="app-container" class="layout-stack">
+    <section id="timeline"></section>
+    <section id="dynamic-sections">
+        <div class="section-box">
+            <h3>Task</h3>
+            <div class="rows-group" id="tasks-container"></div>
+        </div>
+        <div class="section-box">
+            <h3>Pasti</h3>
+            <div class="rows-group" id="meals-container"></div>
+        </div>
+        <div class="section-box">
+            <h3>Note</h3>
+            <div class="rows-group">
+                <textarea id="general-notes" placeholder="Note del giorno..."></textarea>
+            </div>
+        </div>
+    </section>
+</main>
+
+<!-- Cerca questo blocco e sostituiscilo nel file HTML -->
+<div id="settings-overlay" class="hidden">
+    <div class="overlay-header">
+    <button id="restore-settings" class="settings-action-btn">Ripristina</button>
+    <h2 class="settings-title">Impostazioni</h2>
+    <button id="exit-settings" class="settings-action-btn">Chiudi</button>
+</div>
+    <!-- Il resto del contenuto (settings-content) rimane uguale -->
+    <div class="settings-content">
+        <div class="setting-group">
+            <h3>Orari</h3>
+          <!-- Modifica gli input Inizio e Fine così -->
+<label>Inizio: 
+    <div class="custom-select-container">
+        <input type="number" id="cfg-start" min="0" max="24" class="hour-input" placeholder="0">
+        <div id="list-start" class="custom-dropdown-list hidden"></div>
+    </div>
+</label>
+<label>Fine: 
+    <div class="custom-select-container">
+        <input type="number" id="cfg-end" min="0" max="24" class="hour-input" placeholder="0">
+        <div id="list-end" class="custom-dropdown-list hidden"></div>
+    </div>
+</label>
+            <label>Intervallo: 
+                <select id="cfg-step">
+                    <option value="15">15 minuti</option>
+                    <option value="30">30 minuti</option>
+                    <option value="60">1 ora</option>
+                </select>
+            </label>
+        </div>
+        <div class="setting-group">
+            <h3>Estetica</h3>
+            <label class="color-label">
+                Colore Tema: 
+                <input type="color" id="cfg-color">
+            </label>
+            <label>Carattere: 
+                <select id="cfg-font">
+                    <option value="system-ui">Sistema</option>
+                    <option value="'Inter', sans-serif">Moderno</option>
+                    <option value="'Roboto Mono', monospace">Codice</option>
+                    <option value="'Playfair Display', serif">Elegante</option>
+                </select>
+            </label>
+        </div>
+        <div class="setting-group">
+            <h3>Layout</h3>
+            <label>Vista: 
+                <select id="cfg-layout">
+                    <option value="layout-stack">Verticale</option>
+                    <option value="layout-side">Orizzontale</option>
+                </select>
+            </label>
+        </div>
+    </div>
+</div>
+
+<div id="calendar-overlay" class="hidden">
+    <div class="overlay-header">
+        <button id="cal-back-btn">←</button>
+        <h2 id="calendar-title">2026</h2>
+        <button id="close-calendar">Chiudi</button>
+    </div>
+    <div id="calendar-content"></div>
+</div>
+
+<script src="script.js"></script>
+<datalist id="hours-list">
+    <option value="0">00:00</option>
+    <option value="1">01:00</option>
+    <option value="2">02:00</option>
+    <option value="3">03:00</option>
+    <option value="4">04:00</option>
+    <option value="5">05:00</option>
+    <option value="6">06:00</option>
+    <option value="7">07:00</option>
+    <option value="8">08:00</option>
+    <option value="9">09:00</option>
+    <option value="10">10:00</option>
+    <option value="11">11:00</option>
+    <option value="12">12:00</option>
+    <option value="13">13:00</option>
+    <option value="14">14:00</option>
+    <option value="15">15:00</option>
+    <option value="16">16:00</option>
+    <option value="17">17:00</option>
+    <option value="18">18:00</option>
+    <option value="19">19:00</option>
+    <option value="20">20:00</option>
+    <option value="21">21:00</option>
+    <option value="22">22:00</option>
+    <option value="23">23:00</option>
+    <option value="24">24:00</option>
+</datalist>
+<script>
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('service-worker.js')
+      .then(() => console.log('Service Worker registrato!'))
+      .catch(err => console.log('Service Worker fallito:', err));
+  }
+</script>
+
+</body>
+</html>
