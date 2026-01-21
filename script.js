@@ -67,7 +67,6 @@ function renderTimeline() {
             const timeStr = `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
             const entry = savedData[timeStr] || { text: '', completed: false, important: false, deleted: false };
             
-            // SE l'orario è stato eliminato, non lo renderizziamo
             if (entry.deleted) return;
 
             const row = document.createElement('div');
@@ -79,11 +78,11 @@ function renderTimeline() {
                 <div class="hour-label">${timeStr}</div>
                 <textarea placeholder="..." class="${entry.completed ? 'completed' : ''}">${entry.text || ''}</textarea>
                 <div class="row-actions">
-                    <button class="action-icon trash-btn">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                    <button class="action-icon trash-btn" title="Elimina">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
                     </button>
-                    <button class="action-icon check-btn" style="${entry.text ? 'display:flex' : 'display:none'}">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                    <button class="action-icon check-btn" style="${entry.text ? 'display:flex' : 'display:none'}" title="Completa">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
                     </button>
                 </div>
             `;
@@ -99,10 +98,10 @@ function renderTimeline() {
                 saveTimelineData(dateKey, timeStr, val, tx.classList.contains('completed'), row.classList.contains('important'), false);
             };
 
-            // LOGICA RICHIESTA: Comportamento Cestino
-            trashBtn.onclick = () => {
+            // USARE 'pointerdown' per intercettare il tocco prima del blur del textarea
+            const handleTrash = (e) => {
+                e.preventDefault(); // Previene perdita focus immediata
                 if (tx.value.trim() !== "") {
-                    // 1. Voce non vuota: Svuota tutto
                     tx.value = '';
                     tx.classList.remove('completed');
                     row.classList.remove('important');
@@ -111,23 +110,29 @@ function renderTimeline() {
                     updateStarIcon(starBtn, false);
                     saveTimelineData(dateKey, timeStr, '', false, false, false);
                 } else {
-                    // 2. Voce già vuota: Elimina riga
                     row.remove();
                     saveTimelineData(dateKey, timeStr, '', false, false, true);
                 }
             };
 
-            checkBtn.onclick = () => {
+            const handleCheck = (e) => {
+                e.preventDefault();
                 tx.classList.toggle('completed');
                 saveTimelineData(dateKey, timeStr, tx.value, tx.classList.contains('completed'), row.classList.contains('important'), false);
             };
 
-            starBtn.onclick = () => {
+            const handleStar = (e) => {
+                e.preventDefault();
                 const isImportant = row.classList.toggle('important');
                 starBtn.classList.toggle('active');
                 updateStarIcon(starBtn, isImportant);
                 saveTimelineData(dateKey, timeStr, tx.value, tx.classList.contains('completed'), isImportant, false);
             };
+
+            // Eventi per compatibilità universale (Mouse + Touch)
+            trashBtn.onpointerdown = handleTrash;
+            checkBtn.onpointerdown = handleCheck;
+            starBtn.onpointerdown = handleStar;
 
             timeline.appendChild(row);
         });
