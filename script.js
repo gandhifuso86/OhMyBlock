@@ -249,6 +249,39 @@ function setupEventListeners() {
             renderApp();
         };
     });
+    // --- LOGICA SWIPE TOUCH PER NAVIGAZIONE GIORNI ---
+let touchStartX = 0;
+let touchEndX = 0;
+
+const dateDisplay = document.getElementById('currentDateDisplay');
+
+// Rileva l'inizio del tocco
+dateDisplay.addEventListener('touchstart', (e) => {
+    touchStartX = e.changedTouches[0].screenX;
+}, { passive: true });
+
+// Rileva la fine del tocco e calcola la direzione
+dateDisplay.addEventListener('touchend', (e) => {
+    touchEndX = e.changedTouches[0].screenX;
+    handleDateSwipe();
+}, { passive: true });
+
+function handleDateSwipe() {
+    const swipeThreshold = 50; // Distanza minima in pixel per considerare il movimento uno "swipe"
+    
+    // Swipe verso SINISTRA (Dito va a sinistra -> Giorno Successivo)
+    if (touchEndX < touchStartX - swipeThreshold) {
+        currentDate.setDate(currentDate.getDate() + 1);
+        renderApp();
+    } 
+    // Swipe verso DESTRA (Dito va a destra -> Giorno Precedente)
+    else if (touchEndX > touchStartX + swipeThreshold) {
+        currentDate.setDate(currentDate.getDate() - 1);
+        renderApp();
+    }
+}
+// --- FINE LOGICA SWIPE ---
+
 }
 function renderStaticSections() {
     renderTasks();
@@ -357,3 +390,4 @@ function setupHourDropdowns() {
 
 // Chiama la funzione dentro setupEventListeners()
 setupHourDropdowns();
+
