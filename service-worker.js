@@ -1,39 +1,23 @@
-const CACHE_NAME = "agenda-cache-v3";
-
-const FILES_TO_CACHE = [
-  "/OhMyBlock/",
-  "/OhMyBlock/index.html",
-  "/OhMyBlock/style.css",
-  "/OhMyBlock/script.js",
-  "/OhMyBlock/manifest.json",
-  "/OhMyBlock/icon-192.png",
-  "/OhMyBlock/icon-512.png"
-];
-
-self.addEventListener("install", event => {
-  event.waitUntil(
-    caches.open(CACHE_NAME).then(cache => {
-      return cache.addAll(FILES_TO_CACHE);
-    })
-  );
-  self.skipWaiting();
-});
-
-self.addEventListener("activate", event => {
-  event.waitUntil(
-    caches.keys().then(keys =>
-      Promise.all(
-        keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k))
-      )
-    )
-  );
-  self.clients.claim();
-});
-
-self.addEventListener("fetch", event => {
-  event.respondWith(
-    caches.match(event.request).then(response => {
-      return response || fetch(event.request);
-    })
-  );
-});
+{
+  "name": "Agenda Minimal 2026",
+  "short_name": "Agenda",
+  "start_url": "/OhMyBlock/index.html",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#007aff",
+  "description": "Agenda giornaliera minimale per organizzare task e pasti.",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/OhMyBlock/icon-512.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/OhMyBlock/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
