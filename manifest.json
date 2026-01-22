@@ -1,5 +1,5 @@
 {
-  "name": "Agenda Minimal 2026",
+  "name": "OhMyBlock!",
   "short_name": "Agenda",
   "start_url": "index.html",
   "display": "standalone",
@@ -22,3 +22,4 @@
     }
   ]
 }
+
