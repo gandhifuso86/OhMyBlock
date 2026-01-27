@@ -1,23 +1,21 @@
-{
-  "name": "Agenda Minimal 2026",
-  "short_name": "Agenda",
-  "start_url": "/OhMyBlock/index.html",
-  "display": "standalone",
-  "background_color": "#ffffff",
-  "theme_color": "#007aff",
-  "description": "Agenda giornaliera minimale per organizzare task e pasti.",
-  "orientation": "portrait",
-  "icons": [
-    {
-      "src": "/OhMyBlock/icon-512.png",
-      "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "any maskable"
-    },
-    {
-      "src": "/OhMyBlock/icon-512.png",
-      "sizes": "512x512",
-      "type": "image/png"
-    }
-  ]
-}
+const CACHE_NAME = 'v1_cache';
+const urlsToCache = [
+  '/',
+  '/index.html',
+  '/style.css',
+  '/script.js'
+];
+
+// Installazione: salvataggio file in cache
+self.addEventListener('install', event => {
+  event.waitUntil(
+    caches.open(CACHE_NAME).then(cache => cache.addAll(urlsToCache))
+  );
+});
+
+// Intercettazione richieste: serve i file dalla cache se offline
+self.addEventListener('fetch', event => {
+  event.respondWith(
+    caches.match(event.request).then(response => response || fetch(event.request))
+  );
+});
