@@ -871,3 +871,44 @@ header {
 .icon-btn:active {
     transform: scale(0.9);
 }
+header {
+    position: sticky;
+    top: 0;
+    width: 100%;
+    background: rgba(255, 255, 255, 0.9);
+    backdrop-filter: blur(10px);
+    z-index: 1000;
+    padding-top: env(safe-area-inset-top); /* Sposta il contenuto dell'header sotto la tacca del telefono */
+    height: auto;
+    min-height: 55px;
+}
+/* --- FIX MOBILE VIEWPORT --- */
+html, body {
+    height: -webkit-fill-available; /* Fix per Safari iOS */
+    min-height: 100dvh; /* Usa la Dynamic Viewport Height (moderna) */
+    margin: 0;
+    padding: 0;
+    overflow-x: hidden;
+    overflow-y: auto; /* Permette lo scroll naturale */
+    -webkit-overflow-scrolling: touch; /* Scroll fluido su iOS */
+}
+
+/* Assicuriamoci che il container principale non sia bloccato */
+#app-container {
+    padding: 10px 15px 120px; /* Aumentato padding inferiore per non finire sotto la barra browser */
+    min-height: calc(100dvh - 55px); /* Altezza totale meno l'header */
+    box-sizing: border-box;
+}
+
+/* Fix per gli Overlay (Impostazioni, Calendario, Pop-up) */
+.overlay-full, #settings-overlay, #calendar-overlay, #quick-add-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100dvh; /* Altezza dinamica per coprire tutto lo schermo mobile */
+    background: #f9f9f9;
+    z-index: 2000;
+    overflow-y: auto;
+    padding-bottom: env(safe-area-inset-bottom); /* Rispetta lo spazio della barra home di iPhone */
+}
