@@ -1,393 +1,449 @@
-let currentDate = new Date();
-let settings = {
-    startHour: 6,
-    endHour: 20,
-    interval: 30,
-    color: '#007aff',
-    font: 'system-ui',
-    layout: 'layout-stack'
+/**
+ * OHMYBLOCK! - SENIOR REFACTORED CORE
+ */
+
+// --- STATE MANAGEMENT ---
+const State = {
+    currentDate: new Date(),
+    settings: {
+        startHour: 6,
+        endHour: 20,
+        interval: 60,
+        color: '#007aff',
+        font: 'system-ui',
+        layout: 'layout-stack',
+        viewMode: 'day'
+    },
+    months: ["Gennaio", "Febbraio", "Marzo", "Aprile", "Maggio", "Giugno", "Luglio", "Agosto", "Settembre", "Ottobre", "Novembre", "Dicembre"]
 };
 
-let oldSettings = {};
+// --- STORAGE MODULE ---
+const Storage = {
+    save(key, data) { localStorage.setItem(key, JSON.stringify(data)); },
+    get(key) { return JSON.parse(localStorage.getItem(key)); },
+    getDayKey(date) { 
+        const d = new Date(date);
+        return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, '0') + "-" + String(d.getDate()).padStart(2, '0');
+    },
+    getWeekKey(date) {
+        const d = new Date(date);
+        d.setHours(0,0,0,0);
+        d.setDate(d.getDate() + 4 - (d.getDay() || 7));
+        return `${d.getFullYear()}-W${Math.ceil((((d - new Date(d.getFullYear(),0,1))/8.64e7)+1)/7)}`;
+    },
+    hasData(dateKey) {
+        const data = this.get(`data_${dateKey}`);
+        if (!data) return false;
+        return Object.values(data).some(entry => entry.text && !entry.deleted);
+    }
+};
 
-const monthsNames = ["Gennaio", "Febbraio", "Marzo", "Aprile", "Maggio", "Giugno", "Luglio", "Agosto", "Settembre", "Ottobre", "Novembre", "Dicembre"];
-const dayLabels = ["Lun", "Mar", "Mer", "Gio", "Ven", "Sab", "Dom"];
+// --- UI RENDERER MODULE ---
+const Renderer = {
+    renderApp() {
+        this.updateHeader();
+        const container = document.getElementById('timeline');
+        const sections = document.getElementById('dynamic-sections');
+        container.innerHTML = '';
 
-document.addEventListener('DOMContentLoaded', () => {
-    loadSettings();
-    setupEventListeners();
-    renderApp();
-});
+        if (State.settings.viewMode === 'week') {
+            sections.classList.add('hidden');
+            this.renderWeeklyView(container);
+        } else {
+            sections.classList.remove('hidden');
+            this.renderDailyView(container);
+            this.renderStaticSections();
+        }
+    },
 
-function loadSettings() {
-    const saved = localStorage.getItem('agendaSettings');
-    if (saved) settings = JSON.parse(saved);
-    applySettings();
-}
-
-function applySettings() {
-    document.documentElement.style.setProperty('--accent-color', settings.color);
-    document.documentElement.style.setProperty('--main-font', settings.font);
-    document.getElementById('app-container').className = settings.layout;
-    
-    document.getElementById('cfg-start').value = settings.startHour;
-    document.getElementById('cfg-end').value = settings.endHour;
-    document.getElementById('cfg-step').value = settings.interval;
-    document.getElementById('cfg-color').value = settings.color;
-    document.getElementById('cfg-font').value = settings.font;
-    document.getElementById('cfg-layout').value = settings.layout;
-}
-
-function renderApp() {
-    updateDateDisplay();
-    renderTimeline();
-    renderStaticSections();
-}
-
-function updateDateDisplay() {
+    updateHeader() {
     const options = { weekday: 'long', day: 'numeric', month: 'long' };
-    let dateStr = currentDate.toLocaleDateString('it-IT', options);
-    document.getElementById('currentDateDisplay').innerText = dateStr.replace(/\b\w/g, l => l.toUpperCase());
-}
+    let dateStr = State.currentDate.toLocaleDateString('it-IT', options);
+    
+    // Converte in minuscolo con iniziali maiuscole: "Lunedì 26 Gennaio"
+    document.getElementById('currentDateDisplay').innerText = 
+        dateStr.replace(/\b\w/g, l => l.toUpperCase());
 
-// 1. Aggiornamento della funzione renderTimeline per gestire la cancellazione
-function renderTimeline() {
-    const timeline = document.getElementById('timeline');
-    timeline.innerHTML = '';
-    const dateKey = currentDate.toISOString().split('T')[0];
-    const savedData = JSON.parse(localStorage.getItem(`data_${dateKey}`)) || {};
+    document.documentElement.style.setProperty('--accent-color', State.settings.color);
+    document.documentElement.style.setProperty('--main-font', State.settings.font);
+    document.getElementById('app-container').className = State.settings.layout;
+},
 
-    for (let h = settings.startHour; h <= settings.endHour; h++) {
-        let steps = [0];
-        if (settings.interval == 15) steps = [0, 15, 30, 45];
-        else if (settings.interval == 30) steps = [0, 30];
+    createRow(timeStr, entry, dateKey, isReadOnly = false) {
+    const row = document.createElement('div');
+    row.className = `hour-row ${entry.important ? 'important' : ''}`;
+    
+    // HTML Riorganizzato: Stellina all'estrema sinistra
+    row.innerHTML = `
+        <button class="action-icon star-btn ${entry.important ? 'active' : ''}" title="Importante">★</button>
+        <div class="hour-label">${timeStr}</div>
+        <textarea placeholder="..." class="${entry.completed ? 'completed' : ''}" ${isReadOnly ? 'readonly' : ''}>${entry.text || ''}</textarea>
+        ${!isReadOnly ? `
+        <div class="row-actions">
+            <button class="action-icon check-btn" title="Completa">✓</button>
+            <button class="action-icon trash-btn" title="Elimina">🗑</button>
+        </div>` : ''}
+    `;
 
-        steps.forEach(m => {
-            if (h === settings.endHour && m > 0) return;
-            const timeStr = `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
-            const entry = savedData[timeStr] || { text: '', completed: false, important: false, deleted: false };
-            
-            if (entry.deleted) return;
+    // Gestione Stellina (Sempre attiva sia in Daily che in Weekly)
+    const starBtn = row.querySelector('.star-btn');
+    starBtn.onclick = (e) => {
+        e.stopPropagation();
+        const isCurrentlyImportant = row.classList.contains('important');
+        this.handleUpdate(dateKey, timeStr, { important: !isCurrentlyImportant });
+        this.renderApp(); // Refresh per aggiornare lo stato visivo
+    };
 
-            const row = document.createElement('div');
-            row.className = `hour-row ${entry.important ? 'important' : ''}`;
-            row.innerHTML = `
-                <button class="action-icon star-btn ${entry.important ? 'active' : ''}">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="${entry.important ? '#ffcc00' : 'none'}" stroke="${entry.important ? '#ffcc00' : 'currentColor'}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
-                </button>
-                <div class="hour-label">${timeStr}</div>
-                <textarea placeholder="..." class="${entry.completed ? 'completed' : ''}">${entry.text || ''}</textarea>
-                <div class="row-actions">
-                    <button class="action-icon trash-btn" title="Elimina">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
-                    </button>
-                    <button class="action-icon check-btn" style="${entry.text ? 'display:flex' : 'display:none'}" title="Completa">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                    </button>
-                </div>
-            `;
+    if (!isReadOnly) {
+        const tx = row.querySelector('textarea');
+        tx.oninput = () => this.handleUpdate(dateKey, timeStr, { text: tx.value });
+        
+        row.querySelector('.check-btn').onclick = (e) => {
+            e.stopPropagation();
+            tx.classList.toggle('completed');
+            this.handleUpdate(dateKey, timeStr, { completed: tx.classList.contains('completed') });
+        };
 
-            const tx = row.querySelector('textarea');
-            const trashBtn = row.querySelector('.trash-btn');
-            const checkBtn = row.querySelector('.check-btn');
-            const starBtn = row.querySelector('.star-btn');
+        row.querySelector('.trash-btn').onclick = (e) => {
+            e.stopPropagation();
+            if (tx.value.trim() !== "") {
+                tx.value = "";
+                this.handleUpdate(dateKey, timeStr, { text: "" });
+            } else if (confirm("Eliminare questa fascia oraria?")) {
+                this.handleUpdate(dateKey, timeStr, { deleted: true });
+                this.renderApp();
+            }
+        };
+    }
+    return row;
+},
 
-            tx.oninput = (e) => {
-                const val = e.target.value;
-                checkBtn.style.display = val ? 'flex' : 'none';
-                saveTimelineData(dateKey, timeStr, val, tx.classList.contains('completed'), row.classList.contains('important'), false);
-            };
+    handleUpdate(dateKey, timeStr, updates) {
+        const data = Storage.get(`data_${dateKey}`) || {};
+        data[timeStr] = { ...(data[timeStr] || { text: '', completed: false, important: false, deleted: false }), ...updates };
+        Storage.save(`data_${dateKey}`, data);
+    },
 
-            // USARE 'pointerdown' per intercettare il tocco prima del blur del textarea
-            const handleTrash = (e) => {
-                e.preventDefault(); // Previene perdita focus immediata
-                if (tx.value.trim() !== "") {
-                    tx.value = '';
-                    tx.classList.remove('completed');
-                    row.classList.remove('important');
-                    checkBtn.style.display = 'none';
-                    starBtn.classList.remove('active');
-                    updateStarIcon(starBtn, false);
-                    saveTimelineData(dateKey, timeStr, '', false, false, false);
-                } else {
-                    row.remove();
-                    saveTimelineData(dateKey, timeStr, '', false, false, true);
-                }
-            };
+    renderDailyView(container) {
+    const dateKey = Storage.getDayKey(State.currentDate);
+    const saved = Storage.get(`data_${dateKey}`) || {};
+    
+    const interval = State.settings.interval; // 15, 30 o 60
 
-            const handleCheck = (e) => {
-                e.preventDefault();
-                tx.classList.toggle('completed');
-                saveTimelineData(dateKey, timeStr, tx.value, tx.classList.contains('completed'), row.classList.contains('important'), false);
-            };
+    for (let h = State.settings.startHour; h <= State.settings.endHour; h++) {
+        // Calcola i minuti in base all'intervallo
+        let minutes = [0];
+        if (interval === 30) minutes = [0, 30];
+        if (interval === 15) minutes = [0, 15, 30, 45];
 
-            const handleStar = (e) => {
-                e.preventDefault();
-                const isImportant = row.classList.toggle('important');
-                starBtn.classList.toggle('active');
-                updateStarIcon(starBtn, isImportant);
-                saveTimelineData(dateKey, timeStr, tx.value, tx.classList.contains('completed'), isImportant, false);
-            };
-
-            // Eventi per compatibilità universale (Mouse + Touch)
-            trashBtn.onpointerdown = handleTrash;
-            checkBtn.onpointerdown = handleCheck;
-            starBtn.onpointerdown = handleStar;
-
-            timeline.appendChild(row);
+        minutes.forEach(m => {
+            const time = `${h.toString().padStart(2,'0')}:${m.toString().padStart(2,'0')}`;
+            if (saved[time]?.deleted) return;
+            container.appendChild(this.createRow(time, saved[time] || {}, dateKey));
         });
     }
-}
+},
 
-function updateStarIcon(btn, isImportant) {
-    const svg = btn.querySelector('svg');
-    if (isImportant) {
-        svg.setAttribute('fill', '#ffcc00');
-        svg.setAttribute('stroke', '#ffcc00');
-    } else {
-        svg.setAttribute('fill', 'none');
-        svg.setAttribute('stroke', 'currentColor');
-    }
-}
+ renderWeeklyView(container) {
+    let start = new Date(State.currentDate);
+    start.setDate(start.getDate() - (start.getDay() || 7) + 1);
 
-// 2. Aggiornamento funzione salvataggio per includere il flag "deleted"
-function saveTimelineData(dateKey, timeStr, text, completed, important, deleted) {
-    let dayData = JSON.parse(localStorage.getItem(`data_${dateKey}`)) || {};
-    dayData[timeStr] = { text, completed, important, deleted };
-    localStorage.setItem(`data_${dateKey}`, JSON.stringify(dayData));
-}
+    for (let i = 0; i < 7; i++) {
+        const d = new Date(start); d.setDate(start.getDate() + i);
+        const dateKey = Storage.getDayKey(d);
+          // Formattazione corretta per il settimanale
+        let dayName = d.toLocaleDateString('it-IT', { weekday: 'long', day: 'numeric', month: 'long' });
+        let formattedDay = dayName.replace(/\b\w/g, l => l.toUpperCase());
 
-function openCalendar() {
-    document.getElementById('calendar-overlay').classList.remove('hidden');
-    renderMonthsView();
-}
-
-function renderMonthsView() {
-    document.getElementById('calendar-title').innerText = "2026";
-    document.getElementById('cal-back-btn').style.visibility = 'hidden';
-    const container = document.getElementById('calendar-content');
-    container.innerHTML = `<div class="months-grid"></div>`;
-    const grid = container.querySelector('.months-grid');
-    monthsNames.forEach((m, i) => {
-        const btn = document.createElement('button');
-        btn.className = 'cal-box';
-        btn.innerText = m.substring(0, 3).toUpperCase();
-        grid.appendChild(btn);
-        btn.onclick = () => renderDaysView(i);
-    });
-}
-
-function renderDaysView(monthIndex) {
-    document.getElementById('calendar-title').innerText = monthsNames[monthIndex].toUpperCase() + " 2026";
-    document.getElementById('cal-back-btn').style.visibility = 'visible';
-    const container = document.getElementById('calendar-content');
-    container.innerHTML = `<div class="days-grid"></div>`;
-    const grid = container.querySelector('.days-grid');
-    dayLabels.forEach(l => {
-        const d = document.createElement('div');
-        d.className = 'weekday-label'; d.innerText = l; grid.appendChild(d);
-    });
-    const firstDay = new Date(2026, monthIndex, 1).getDay();
-    const offset = firstDay === 0 ? 6 : firstDay - 1;
-    const days = new Date(2026, monthIndex + 1, 0).getDate();
-    for (let i = 0; i < offset; i++) grid.appendChild(document.createElement('div'));
-    for (let d = 1; d <= days; d++) {
-        const btn = document.createElement('button');
-        btn.className = 'cal-box'; btn.innerText = d;
-        btn.onclick = () => {
-            currentDate = new Date(2026, monthIndex, d);
-            renderApp();
-            document.getElementById('calendar-overlay').classList.add('hidden');
+        const h = document.createElement('div');
+        h.className = 'weekly-day-container';
+        h.innerHTML = `
+            <div class="weekly-day-header">
+                <span class="date-title">${formattedDay}</span>
+                <button class="weekly-plus-btn" data-date="${dateKey}" data-label="${formattedDay}">+</button>
+            </div>`;
+        
+        h.querySelector('.weekly-plus-btn').onclick = (e) => {
+            QuickAdd.open(e.target.dataset.date, e.target.dataset.label);
         };
-        grid.appendChild(btn);
+        container.appendChild(h);
+
+        const saved = Storage.get(`data_${dateKey}`) || {};
+        let count = 0;
+      // ... dentro renderWeeklyView, nel ciclo degli eventi salvati ...
+Object.keys(saved).sort().forEach(t => {
+    if (saved[t].text && !saved[t].deleted) {
+        // MODIFICA: cambiamo l'ultimo parametro da 'true' a 'false'
+        const row = this.createRow(t, saved[t], dateKey, false); 
+        
+        // Manteniamo la possibilità di cliccare sul testo per aprire il pop-up di modifica
+        const tx = row.querySelector('textarea');
+        tx.style.cursor = "pointer";
+        tx.onclick = () => QuickAdd.open(dateKey, dayName, t, saved[t].text);
+        
+        container.appendChild(row);
+        count++;
     }
-}
+});
+        
+        if (count === 0) {
+            const empty = document.createElement('div');
+            empty.className = "weekly-day-no-data";
+            empty.style = "text-align:center; color:gray; font-style:italic; padding: 10px 0 30px;";
+            empty.innerText = "Nessun impegno";
+            container.appendChild(empty);
+        }
+    }
+    this.renderWeeklyExtra(container);
+},
 
+    renderStaticSections() {
+        const dateKey = Storage.getDayKey(State.currentDate);
+        this.renderGenericTasks(`tasks_${dateKey}`, 'tasks-container');
+        
+        const mCont = document.getElementById('meals-container');
+        const sMeals = Storage.get(`meals_${dateKey}`) || {};
+        mCont.innerHTML = ['Colazione', 'Pranzo', 'Cena'].map(m => `
+            <div class="input-row"><div class="bullet"></div><input type="text" placeholder="${m}..." value="${sMeals[m]||''}" data-m="${m}"></div>
+        `).join('');
+        mCont.querySelectorAll('input').forEach(i => i.onchange = (e) => {
+            sMeals[e.target.dataset.m] = e.target.value;
+            Storage.save(`meals_${dateKey}`, sMeals);
+        });
 
-let snapshotSettings = {};
+        const n = document.getElementById('general-notes');
+        n.value = localStorage.getItem(`notes_${dateKey}`) || "";
+        n.oninput = () => localStorage.setItem(`notes_${dateKey}`, n.value);
+    },
 
+    renderWeeklyExtra(container) {
+        const weekId = Storage.getWeekKey(State.currentDate);
+        const div = document.createElement('div');
+        div.innerHTML = `<div class="section-box"><h3>Task Settimanali</h3><div class="rows-group" id="w-tasks"></div></div>
+                         <div class="section-box"><h3>Note Settimanali</h3><div class="rows-group"><textarea id="w-notes" style="width:100%; min-height:100px"></textarea></div></div>`;
+        container.appendChild(div);
+        this.renderGenericTasks(`tasks_w_${weekId}`, 'w-tasks');
+        const wn = document.getElementById('w-notes');
+        wn.value = localStorage.getItem(`notes_w_${weekId}`) || "";
+        wn.oninput = () => localStorage.setItem(`notes_w_${weekId}`, wn.value);
+    },
+
+    renderGenericTasks(key, id) {
+        const cont = document.getElementById(id);
+        let tasks = Storage.get(key) || [""];
+        cont.innerHTML = '';
+        tasks.forEach((t, i) => {
+            const row = document.createElement('div');
+            row.className = 'input-row';
+            row.innerHTML = `<div class="bullet"></div><input type="text" value="${t}" placeholder="Nuovo task...">`;
+            
+            const input = row.querySelector('input');
+
+            // Salvataggio su cambio focus o testo
+            input.onchange = (e) => {
+                tasks[i] = e.target.value;
+                tasks = tasks.filter((task, idx) => task.trim() !== "" || idx === tasks.length - 1);
+                if (tasks[tasks.length-1] !== "") tasks.push("");
+                Storage.save(key, tasks);
+                this.renderGenericTasks(key, id);
+            };
+
+            // FIX INVIO: Salvataggio immediato prima del nuovo focus
+            input.onkeydown = (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    const val = input.value.trim();
+                    if (val !== "") {
+                        tasks[i] = val; // Persistenza valore immediata
+                        if (i === tasks.length - 1) tasks.push("");
+                        Storage.save(key, tasks);
+                        this.renderGenericTasks(key, id);
+                        
+                        setTimeout(() => {
+                            const newInputs = cont.querySelectorAll('input');
+                            if (newInputs[i+1]) newInputs[i+1].focus();
+                        }, 10);
+                    }
+                }
+            };
+            cont.appendChild(row);
+        });
+    }
+};
+
+// --- QUICK ADD & WHEEL PICKER MODULE ---
+const QuickAdd = {
+    selectedDate: "",
+    editingTime: null,
+
+    open(dateKey, label, time = null, text = "") {
+        this.selectedDate = dateKey;
+        this.editingTime = time; // Serve per sapere se stiamo modificando un vecchio evento
+        
+        // Aggiorna etichetta giorno
+        document.getElementById('quick-add-date-label').innerText = label;
+        
+        // Imposta il testo dell'evento
+        document.getElementById('quick-text').value = text;
+
+        // Gestione Orario: se non c'è, mettiamo l'ora attuale o 09:00
+        const inputTime = document.getElementById('event-time-input');
+        inputTime.value = time || "09:00";
+
+        // Mostra pop-up
+        document.getElementById('quick-add-overlay').classList.remove('hidden');
+    },
+
+    save() {
+        const newTime = document.getElementById('event-time-input').value;
+        const text = document.getElementById('quick-text').value;
+
+        if (!text) return alert("Inserisci un testo per l'evento");
+        if (!newTime) return alert("Inserisci un orario valido");
+
+        // Se stiamo modificando un evento e l'orario è cambiato, cancelliamo il vecchio slot
+        if (this.editingTime && this.editingTime !== newTime) {
+            Renderer.handleUpdate(this.selectedDate, this.editingTime, { deleted: true });
+        }
+
+        // Salvataggio/Aggiornamento
+        Renderer.handleUpdate(this.selectedDate, newTime, { text, deleted: false });
+        
+        document.getElementById('quick-add-overlay').classList.add('hidden');
+        Renderer.renderApp();
+    }
+};
+// --- CALENDAR MODULE ---
+const Calendar = {
+    open() {
+        document.getElementById('calendar-overlay').classList.remove('hidden');
+        this.renderMesi();
+    },
+    renderMesi() {
+        const currentYear = State.currentDate.getFullYear();
+        document.getElementById('calendar-title').innerText = currentYear;
+        const cont = document.getElementById('calendar-content');
+        cont.innerHTML = `<div class="months-grid"></div>`;
+        State.months.forEach((m, i) => {
+            const b = document.createElement('button');
+            b.className = 'cal-box'; b.innerText = m.substring(0,3).toUpperCase();
+            b.onclick = () => this.renderGiorni(i);
+            cont.firstChild.appendChild(b);
+        });
+    },
+    renderGiorni(mIdx) {
+        const currentYear = State.currentDate.getFullYear();
+        document.getElementById('calendar-title').innerText = State.months[mIdx].toUpperCase();
+        const cont = document.getElementById('calendar-content');
+        cont.innerHTML = `<div class="calendar-weekdays"><div>Lun</div><div>Mar</div><div>Mer</div><div>Gio</div><div>Ven</div><div>Sab</div><div>Dom</div></div><div class="days-grid"></div>`;
+        const grid = cont.querySelector('.days-grid');
+        let firstDay = new Date(currentYear, mIdx, 1).getDay();
+        const offset = firstDay === 0 ? 6 : firstDay - 1;
+        const totalDays = new Date(currentYear, mIdx + 1, 0).getDate();
+        const todayKey = Storage.getDayKey(new Date());
+
+        for (let x = 0; x < offset; x++) {
+            const empty = document.createElement('div');
+            empty.className = 'cal-box empty';
+            grid.appendChild(empty);
+        }
+        for (let d = 1; d <= totalDays; d++) {
+            const tempDate = new Date(currentYear, mIdx, d);
+            const dateKey = Storage.getDayKey(tempDate);
+            const b = document.createElement('button');
+            b.className = 'cal-box';
+            b.innerText = d;
+            if (dateKey === todayKey) b.classList.add('today');
+            if (Storage.hasData(dateKey)) b.classList.add('has-event');
+            b.onclick = () => {
+                State.currentDate = tempDate;
+                document.getElementById('calendar-overlay').classList.add('hidden');
+                Renderer.renderApp();
+            };
+            grid.appendChild(b);
+        }
+    }
+};
+
+// --- EVENTS ---
 function setupEventListeners() {
-    // ... i primi listener (prevDay, nextDay, ecc.) rimangono uguali ...
-    document.getElementById('prevDay').onclick = () => { currentDate.setDate(currentDate.getDate() - 1); renderApp(); };
-    document.getElementById('nextDay').onclick = () => { currentDate.setDate(currentDate.getDate() + 1); renderApp(); };
-    document.getElementById('currentDateDisplay').onclick = openCalendar;
-    document.getElementById('cal-back-btn').onclick = renderMonthsView;
+    document.getElementById('prevDay').onclick = () => { 
+        const offset = State.settings.viewMode === 'week' ? 7 : 1;
+        State.currentDate.setDate(State.currentDate.getDate() - offset); 
+        Renderer.renderApp(); 
+    };
+    document.getElementById('nextDay').onclick = () => { 
+        const offset = State.settings.viewMode === 'week' ? 7 : 1;
+        State.currentDate.setDate(State.currentDate.getDate() + offset); 
+        Renderer.renderApp(); 
+    };
     document.getElementById('close-calendar').onclick = () => document.getElementById('calendar-overlay').classList.add('hidden');
-
-    // Apertura: salva lo stato attuale
-    document.getElementById('open-settings').onclick = () => {
-        snapshotSettings = JSON.parse(JSON.stringify(settings)); 
-        document.getElementById('settings-overlay').classList.remove('hidden');
+    document.getElementById('toggle-layout').onclick = () => { 
+        State.settings.viewMode = State.settings.viewMode === 'day' ? 'week' : 'day'; 
+        Storage.save('agendaSettings', State.settings); 
+        Renderer.renderApp(); 
     };
+    document.getElementById('currentDateDisplay').onclick = () => Calendar.open();
+    document.getElementById('open-settings').onclick = () => document.getElementById('settings-overlay').classList.remove('hidden');
+    document.getElementById('exit-settings').onclick = () => document.getElementById('settings-overlay').classList.add('hidden');
+    document.getElementById('cal-back-btn').onclick = () => isNaN(document.getElementById('calendar-title').innerText) ? Calendar.renderMesi() : document.getElementById('calendar-overlay').classList.add('hidden');
+    document.getElementById('time-picker-trigger').onclick = () => document.getElementById('wheel-picker-container').classList.toggle('hidden');
+    document.getElementById('save-quick-event').onclick = () => QuickAdd.save();
+    document.getElementById('close-quick-add').onclick = () => document.getElementById('quick-add-overlay').classList.add('hidden');
+    document.getElementById('restore-settings').onclick = () => { if(confirm("Ripristinare impostazioni?")) { localStorage.removeItem('agendaSettings'); location.reload(); }};
 
-    // Pulsante Ripristina: ricarica lo snapshot
-    document.getElementById('restore-settings').onclick = () => {
-        settings = JSON.parse(JSON.stringify(snapshotSettings));
-        applySettings();
-        localStorage.setItem('agendaSettings', JSON.stringify(settings));
-        renderApp();
-    };
+   // Cerca questa parte in setupEventListeners() e aggiornala:
 
-    // Pulsante Chiudi (sostituisce Salva/Annulla per uscire)
-    document.getElementById('exit-settings').onclick = () => {
-        document.getElementById('settings-overlay').classList.add('hidden');
-    };
+['cfg-start', 'cfg-end', 'cfg-step', 'cfg-color', 'cfg-font', 'cfg-layout'].forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
 
-    // Applicazione IMMEDIATA al cambio di ogni input
-    const inputs = ['cfg-start', 'cfg-end', 'cfg-step', 'cfg-color', 'cfg-font', 'cfg-layout'];
-    inputs.forEach(id => {
-        document.getElementById(id).onchange = () => {
-            settings.startHour = parseInt(document.getElementById('cfg-start').value);
-            settings.endHour = parseInt(document.getElementById('cfg-end').value);
-            settings.interval = parseInt(document.getElementById('cfg-step').value);
-            settings.color = document.getElementById('cfg-color').value;
-            settings.font = document.getElementById('cfg-font').value;
-            settings.layout = document.getElementById('cfg-layout').value;
-            
-            applySettings();
-            localStorage.setItem('agendaSettings', JSON.stringify(settings));
-            renderApp();
-        };
-    });
-    // --- LOGICA SWIPE TOUCH PER NAVIGAZIONE GIORNI ---
-let touchStartX = 0;
-let touchEndX = 0;
-
-const dateDisplay = document.getElementById('currentDateDisplay');
-
-// Rileva l'inizio del tocco
-dateDisplay.addEventListener('touchstart', (e) => {
-    touchStartX = e.changedTouches[0].screenX;
-}, { passive: true });
-
-// Rileva la fine del tocco e calcola la direzione
-dateDisplay.addEventListener('touchend', (e) => {
-    touchEndX = e.changedTouches[0].screenX;
-    handleDateSwipe();
-}, { passive: true });
-
-function handleDateSwipe() {
-    const swipeThreshold = 50; // Distanza minima in pixel per considerare il movimento uno "swipe"
-    
-    // Swipe verso SINISTRA (Dito va a sinistra -> Giorno Successivo)
-    if (touchEndX < touchStartX - swipeThreshold) {
-        currentDate.setDate(currentDate.getDate() + 1);
-        renderApp();
-    } 
-    // Swipe verso DESTRA (Dito va a destra -> Giorno Precedente)
-    else if (touchEndX > touchStartX + swipeThreshold) {
-        currentDate.setDate(currentDate.getDate() - 1);
-        renderApp();
-    }
-}
-// --- FINE LOGICA SWIPE ---
-
-}
-function renderStaticSections() {
-    renderTasks();
-    const dateKey = currentDate.toISOString().split('T')[0];
-    const mealsContainer = document.getElementById('meals-container');
-    const savedMeals = JSON.parse(localStorage.getItem(`meals_${dateKey}`)) || {};
-    
-    mealsContainer.innerHTML = ['Colazione', 'Pranzo', 'Cena'].map(m => `
-        <div class="input-row">
-            <span style="width:70px; font-size:0.7rem; color:var(--accent-color); font-weight:700">${m.toUpperCase()}</span>
-            <input type="text" placeholder="..." value="${savedMeals[m] || ''}" oninput="saveMeal('${m}', this.value)">
-        </div>
-    `).join('');
-
-    const notesArea = document.getElementById('general-notes');
-    notesArea.value = localStorage.getItem(`notes_${dateKey}`) || "";
-    notesArea.oninput = (e) => localStorage.setItem(`notes_${dateKey}`, e.target.value);
-}
-
-function renderTasks() {
-    const container = document.getElementById('tasks-container');
-    const dateKey = currentDate.toISOString().split('T')[0];
-    const savedTasks = JSON.parse(localStorage.getItem(`tasks_${dateKey}`)) || [""];
-    container.innerHTML = '';
-    savedTasks.forEach((t, i) => createTaskRow(container, t, i, dateKey));
-}
-
-function createTaskRow(container, value, index, dateKey) {
-    const row = document.createElement('div');
-    row.className = 'input-row';
-    row.innerHTML = `<div class="bullet"></div><input type="text" placeholder="Nuovo task..." value="${value}">`;
-    const input = row.querySelector('input');
-    input.oninput = (e) => {
-        let tasks = JSON.parse(localStorage.getItem(`tasks_${dateKey}`)) || [""];
-        tasks[index] = e.target.value;
-        localStorage.setItem(`tasks_${dateKey}`, JSON.stringify(tasks));
-    };
-    input.onkeydown = (e) => {
-        if (e.key === 'Enter') {
-            e.preventDefault();
-            let tasks = JSON.parse(localStorage.getItem(`tasks_${dateKey}`)) || [""];
-            tasks.splice(index + 1, 0, "");
-            localStorage.setItem(`tasks_${dateKey}`, JSON.stringify(tasks));
-            renderTasks();
-            container.querySelectorAll('input')[index + 1].focus();
-        }
-    };
-    container.appendChild(row);
-}
-
-function saveMeal(mealType, value) {
-    const dateKey = currentDate.toISOString().split('T')[0];
-    let meals = JSON.parse(localStorage.getItem(`meals_${dateKey}`)) || {};
-    meals[mealType] = value;
-    localStorage.setItem(`meals_${dateKey}`, JSON.stringify(meals));
-}
-function setupHourDropdowns() {
-    const hours = Array.from({ length: 25 }, (_, i) => i); // Array 0-24
-
-    ['start', 'end'].forEach(type => {
-        const input = document.getElementById(`cfg-${type}`);
-        const list = document.getElementById(`list-${type}`);
-
-        // Popola la lista
-        function renderList() {
-            list.innerHTML = '';
-            const currentVal = parseInt(input.value);
-            
-            hours.forEach(h => {
-                const item = document.createElement('div');
-                item.className = `dropdown-item ${h === currentVal ? 'active' : ''}`;
-                item.innerText = h.toString().padStart(2, '0') + ':00';
-                
-                item.onclick = (e) => {
-                    e.stopPropagation();
-                    input.value = h;
-                    // Trigger manuale dell'evento change per salvare le impostazioni
-                    input.dispatchEvent(new Event('change'));
-                    list.classList.add('hidden');
-                };
-                list.appendChild(item);
-            });
+    el.onchange = () => {
+        let val = el.value;
+        
+        // Forza i valori numerici per orari e intervalli
+        if (el.type === 'number' || id === 'cfg-step') {
+            val = parseInt(el.value);
         }
 
-        // Mostra la tendina al click sull'input (comprese le freccette del CSS)
-        input.onclick = (e) => {
-            e.stopPropagation();
-            // Chiudi l'altra tendina se aperta
-            document.querySelectorAll('.custom-dropdown-list').forEach(el => el.classList.add('hidden'));
-            renderList();
-            list.classList.remove('hidden');
-            
-            // Scroll automatico all'elemento attivo
-            setTimeout(() => {
-                const activeItem = list.querySelector('.active');
-                if (activeItem) activeItem.scrollIntoView({ block: 'center' });
-            }, 10);
-        };
-    });
+        const key = id.replace('cfg-', '');
+        
+        // Mappatura corretta delle chiavi
+        if (key === 'start') State.settings.startHour = val;
+        else if (key === 'end') State.settings.endHour = val;
+        else if (key === 'step') State.settings.interval = val; // Qui salviamo l'intervallo
+        else State.settings[key] = val;
 
-    // Chiudi le tendine se si clicca fuori
-    document.addEventListener('click', () => {
-        document.querySelectorAll('.custom-dropdown-list').forEach(el => el.classList.add('hidden'));
-    });
+        Storage.save('agendaSettings', State.settings);
+        Renderer.renderApp(); // Riesegue il rendering con il nuovo intervallo
+    };
+});
 }
 
-// Chiama la funzione dentro setupEventListeners()
-setupHourDropdowns();
+// --- INIT ---
+const savedSettings = Storage.get('agendaSettings');
+if (savedSettings) State.settings = { ...State.settings, ...savedSettings };
+  // Aggiorna visivamente i selettori nelle impostazioni con i valori salvati
+    document.getElementById('cfg-start').value = State.settings.startHour;
+    document.getElementById('cfg-end').value = State.settings.endHour;
+    document.getElementById('cfg-step').value = State.settings.interval;
+    document.getElementById('cfg-color').value = State.settings.color;
+    document.getElementById('cfg-font').value = State.settings.font;
+    document.getElementById('cfg-layout').value = State.settings.layout;
+setupEventListeners();
+Renderer.renderApp();
+function loadSettingsInUI() {
+    // Questa funzione assicura che gli input grafici corrispondano allo State
+    document.getElementById('cfg-start').value = State.settings.startHour;
+    document.getElementById('cfg-end').value = State.settings.endHour;
+    document.getElementById('cfg-step').value = State.settings.interval;
+    document.getElementById('cfg-color').value = State.settings.color;
+    document.getElementById('cfg-font').value = State.settings.font;
+    document.getElementById('cfg-layout').value = State.settings.layout;
+}
 
+// Chiamala quando apri le impostazioni
+document.getElementById('open-settings').onclick = () => {
+    loadSettingsInUI(); // Sincronizza UI prima di mostrare
+    document.getElementById('settings-overlay').classList.remove('hidden');
+};
