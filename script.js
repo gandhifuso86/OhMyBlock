@@ -12,10 +12,23 @@ const State = {
         color: '#007aff',
         font: 'system-ui',
         layout: 'layout-stack',
-        viewMode: 'day'
+        viewMode: 'day',
+        theme: 'light' // Valore di default
+
     },
     months: ["Gennaio", "Febbraio", "Marzo", "Aprile", "Maggio", "Giugno", "Luglio", "Agosto", "Settembre", "Ottobre", "Novembre", "Dicembre"]
 };
+function applyTheme() {
+    const theme = State.settings.theme;
+    const body = document.body;
+
+    if (theme === 'auto') {
+        const isDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        body.setAttribute('data-theme', isDarkMode ? 'dark' : 'light');
+    } else {
+        body.setAttribute('data-theme', theme);
+    }
+}
 
 // --- STORAGE MODULE ---
 const Storage = {
@@ -394,7 +407,7 @@ function setupEventListeners() {
 
    // Cerca questa parte in setupEventListeners() e aggiornala:
 
-['cfg-start', 'cfg-end', 'cfg-step', 'cfg-color', 'cfg-font', 'cfg-layout'].forEach(id => {
+['cfg-start', 'cfg-end', 'cfg-step', 'cfg-color', 'cfg-font', 'cfg-layout', 'cfg-theme'].forEach(id => {
     const el = document.getElementById(id);
     if (!el) return;
 
@@ -423,6 +436,7 @@ function setupEventListeners() {
 // --- INIT ---
 const savedSettings = Storage.get('agendaSettings');
 if (savedSettings) State.settings = { ...State.settings, ...savedSettings };
+ applyTheme();
   // Aggiorna visivamente i selettori nelle impostazioni con i valori salvati
     document.getElementById('cfg-start').value = State.settings.startHour;
     document.getElementById('cfg-end').value = State.settings.endHour;
@@ -447,3 +461,42 @@ document.getElementById('open-settings').onclick = () => {
     loadSettingsInUI(); // Sincronizza UI prima di mostrare
     document.getElementById('settings-overlay').classList.remove('hidden');
 };
+
+const oggi = new Date().toISOString().slice(0, 10);
+
+const oraInput = document.getElementById("ora");
+const testoInput = document.getElementById("testo");
+const lista = document.getElementById("lista");
+
+document.getElementById("aggiungi").addEventListener("click", () => {
+  if (!oraInput.value || !testoInput.value) return;
+
+  aggiungiVoce(oggi, oraInput.value, testoInput.value);
+  testoInput.value = "";
+  caricaUI();
+});
+function caricaUI() {
+  lista.innerHTML = "";
+
+  caricaGiornata(oggi, giorno => {
+    if (!giorno) return;
+
+    giorno.voci.forEach((voce, index) => {
+      const li = document.createElement("li");
+      li.textContent = `${voce.ora} - ${voce.testo}`;
+
+      li.addEventListener("click", () => {
+        eliminaVoce(oggi, index);
+        caricaUI();
+      });
+
+      lista.appendChild(li);
+    });
+  });
+}
+
+caricaUI();
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker.register("service-worker.js");
+}
+const CACHE_NAME = 'agenda-cache-v1';
