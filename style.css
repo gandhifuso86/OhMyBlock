@@ -1,4 +1,36 @@
-:root {
+/* 1. Forza il calcolo corretto delle larghezze */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box; /* FONDAMENTALE */
+}
+
+/* 2. Impedisce lo scroll orizzontale accidentale sul body */
+html, body {
+  width: 100%;
+  overflow-x: hidden;
+  position: relative;
+}
+
+/* 3. Assicurati che il main non superi mai la larghezza schermo */
+#app-container {
+  width: 100%;
+  max-width: 100vw;
+  display: flex;
+  flex-direction: column; /* Default stack */
+}
+
+/* 4. Se usi la vista affiancata (Orizzontale) */
+.layout-side {
+  flex-direction: row !important;
+  flex-wrap: nowrap; /* Se vuoi che stiano affiancati */
+}
+
+/* Se la vista side taglia a destra, assicurati che i figli si restringano */
+.layout-side > section {
+  flex: 1; 
+  min-width: 0; /* Evita che il contenuto interno forzi la larghezza */
+}:root {
     --bg-color: #ffffff;
     --text-color: #1c1c1e;
     --accent-color: #007aff;
@@ -911,4 +943,221 @@ html, body {
     z-index: 2000;
     overflow-y: auto;
     padding-bottom: env(safe-area-inset-bottom); /* Rispetta lo spazio della barra home di iPhone */
+}
+/* --- PULSANTI POP-UP E IMPOSTAZIONI (BOX ADERENTI) --- */
+
+.settings-action-btn {
+    all: unset;
+    background-color: #efeff4 !important; /* Grigetto di sfondo */
+    border-radius: 8px;
+    
+    /* Padding: 6px sopra/sotto, 14px destra/sinistra per un look perfetto */
+    padding: 6px 14px !important; 
+    
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    
+    /* Forza il blocco a stringersi attorno al testo invece di allungarsi */
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: auto !important; 
+    min-width: 75px; /* Larghezza minima garantita per l'estetica */
+    
+    transition: background 0.2s, opacity 0.2s;
+}
+
+/* Posizionamento nel pop-up (Header Grid) */
+#close-quick-add, #restore-settings {
+    justify-self: start; /* Allineato a sinistra, ma largo quanto il testo */
+}
+
+#save-quick-event, #exit-settings {
+    justify-self: end; /* Allineato a destra, ma largo quanto il testo */
+}
+
+/* Colori specifici per i testi */
+.btn-light-cancel {
+    color: #ff3b30 !important; /* Rosso per Annulla */
+}
+
+.btn-light-save {
+    color: var(--accent-color) !important; /* Blu (o colore tema) per Salva */
+}
+
+/* Effetto feedback al tocco */
+.settings-action-btn:active {
+    background-color: #e5e5ea !important;
+    transform: scale(0.96);
+}
+/* --- CONFIGURAZIONE TEMI --- */
+:root {
+    /* Tema Chiaro (Default) */
+    --bg-color: #ffffff;
+    --text-color: #1c1c1e;
+    --secondary-bg: #f2f2f7;
+    --border-color: #e5e5ea;
+    --gray-text: #8e8e93;
+    --overlay-bg: #f9f9f9;
+}
+
+[data-theme="dark"] {
+    /* Tema Scuro */
+    --bg-color: #1c1c1e;
+    --text-color: #f2f2f7;
+    --secondary-bg: #2c2c2e;
+    --border-color: #3a3a3c;
+    --gray-text: #8e8e93;
+    --overlay-bg: #121212;
+}
+
+/* Applichiamo le variabili a tutto il sito */
+body {
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    transition: background-color 0.3s, color 0.3s;
+}
+
+header {
+    background: var(--bg-color);
+    border-bottom: 1px solid var(--border-color);
+}
+
+.setting-group, .overlay-header {
+    background: var(--bg-color) !important;
+}
+
+#settings-overlay, #calendar-overlay, #quick-add-overlay {
+    background: var(--overlay-bg) !important;
+}
+
+textarea, input, select {
+    color: var(--text-color) !important;
+}
+
+/* I blocchi grigetti delle impostazioni devono adattarsi */
+.settings-action-btn, .setting-group select, .setting-group input {
+    background-color: var(--secondary-bg) !important;
+}
+/* --- CORREZIONE CONTRASTO GIORNO CORRENTE (DARK MODE) --- */
+
+[data-theme="dark"] .date-title {
+    /* Usiamo un grigio grafite profondo con una punta di trasparenza */
+    background: rgba(255, 255, 255, 0.08) !important; 
+    
+    /* Il testo mantiene l'accent color scelto, ma lo rendiamo leggermente più luminoso */
+    color: var(--accent-color) !important;
+    
+    /* Aggiungiamo un leggero bordo per dare profondità */
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    
+    /* Ombra morbida per far "galleggiare" il blocco */
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    
+    backdrop-filter: blur(5px); /* Effetto vetro sfocato */
+}
+
+/* Correzione anche per i blocchi nel layout settimanale */
+[data-theme="dark"] .weekly-day-header {
+    background: rgba(255, 255, 255, 0.05) !important;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+/* --- PULIZIA ICONE AZIONI (NO SFONDO) --- */
+.action-icon {
+    background: none !important;
+    border: none !important;
+    box-shadow: none !important;
+    
+    /* Colore come quello delle ore (var --gray-text) */
+    color: var(--gray-text) !important; 
+    
+    padding: 5px !important;
+    opacity: 0.6;
+    transition: opacity 0.2s, color 0.2s;
+}
+
+/* Al passaggio del mouse o tocco, l'icona si illumina senza creare blocchi */
+.action-icon:hover, .action-icon:active {
+    opacity: 1;
+    color: var(--accent-color) !important; /* Diventa del colore tema solo l'icona */
+}
+
+/* Rimuoviamo eventuali contenitori grigi dietro il gruppo icone */
+.row-actions {
+    background: transparent !important;
+}
+[data-theme="dark"] .action-icon {
+    /* Assicura che le icone siano visibili sul nero come la scritta delle ore */
+    color: var(--gray-text) !important; 
+}
+
+[data-theme="dark"] .weekly-day-header {
+    /* In dark mode la linea di separazione deve essere molto discreta */
+    border-bottom-color: rgba(255, 255, 255, 0.1) !important;
+}
+/* --- RIMOZIONE BLOCCO DIETRO IL TESTO NEL SETTIMANALE --- */
+
+.weekly-day-header .date-title {
+    background: transparent !important; /* Elimina il blocco celeste/grigio dietro il testo */
+    padding: 0 !important;              /* Rimuove lo spazio interno del vecchio blocco */
+    border: none !important;            /* Rimuove eventuali bordi */
+    box-shadow: none !important;        /* Rimuove ombre se presenti */
+    
+    /* Il testo ora poggia direttamente sulla riga lunga */
+    display: inline-block; 
+}
+
+/* Assicuriamoci che il blocco lungo (la riga) rimanga visibile */
+.weekly-day-header {
+    background: var(--secondary-bg) !important; /* Questo è il blocco lungo che separa i giorni */
+    padding: 10px 16px !important;              /* Spazio interno della riga */
+    border-radius: 5px;                        /* Angoli smussati della riga */
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+[data-theme="dark"] .weekly-day-header .date-title {
+    background: transparent !important; /* Forza la trasparenza totale in Dark Mode */
+}
+
+[data-theme="dark"] .weekly-day-header {
+    background: rgba(255, 255, 255, 0.05) !important; /* Mantiene la riga lunga scura */
+}
+/* --- UNIFORMITÀ TEXTAREA POP-UP --- */
+
+#quick-text {
+    /* Utilizziamo le variabili dinamiche per far sì che cambi con il tema */
+    background-color: var(--secondary-bg) !important; 
+    color: var(--text-color) !important;
+    border: 1px solid var(--border-color) !important;
+    
+    width: 100%;
+    min-height: 120px;
+    border-radius: 12px;
+    padding: 15px;
+    font-family: inherit;
+    font-size: 1.1rem;
+    resize: none;
+    box-sizing: border-box;
+    outline: none;
+    display: block;
+    transition: background-color 0.3s, border-color 0.3s;
+}
+
+/* Stilizziamo il placeholder (il testo suggerito) per il tema scuro */
+#quick-text::placeholder {
+    color: var(--gray-text);
+    opacity: 0.6;
+}
+
+/* Feedback visivo quando si clicca per scrivere */
+#quick-text:focus {
+    border-color: var(--accent-color) !important;
+    background-color: var(--bg-color) !important; /* Diventa leggermente più scuro/chiaro per dare profondità */
+}
+
+/* Correzione specifica per il tema scuro se necessario */
+[data-theme="dark"] #quick-text {
+    background-color: #2c2c2e !important; /* Un grigio leggermente più chiaro del fondo per contrasto */
 }
