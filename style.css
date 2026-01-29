@@ -1,43 +1,96 @@
-/* ===================================
-   FIX OVERFLOW ORIZZONTALE ANDROID
-   =================================== */
+/* AGGIUNGI/MODIFICA QUESTE REGOLE ALL'INIZIO DEL FILE */
 
+/* 1. Fix viewport e overflow */
+html, body {
+    width: 100%;
+    max-width: 100vw;
+    overflow-x: hidden;
+    position: relative;
+    margin: 0;
+    padding: 0;
+}
+
+/* 2. Container principale - impedisce overflow */
+#app-container {
+    width: 100%;
+    max-width: 100vw;
+    overflow-x: hidden;
+    box-sizing: border-box;
+    padding: 10px 15px 120px;
+}
+
+/* 3. Sezioni - previene espansione oltre schermo */
+#timeline, #dynamic-sections {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: hidden;
+    box-sizing: border-box;
+}
+
+/* 4. Fix layout orizzontale (se attivo) */
+.layout-side {
+    flex-direction: row !important;
+    flex-wrap: nowrap;
+    overflow-x: hidden;
+}
+
+.layout-side > section {
+    flex: 1;
+    min-width: 0; /* CRITICO: permette al flex di comprimere */
+    max-width: 100%;
+}
+
+/* 5. Fix textarea e input che possono espandersi troppo */
+textarea, input {
+    max-width: 100%;
+    box-sizing: border-box;
+}
+
+/* 6. Header - assicura che non esca dallo schermo */
+header {
+    width: 100%;
+    max-width: 100vw;
+    box-sizing: border-box;
+}
+
+/* 7. Overlay - fix per Android */
+.overlay-full, #settings-overlay, #calendar-overlay, #quick-add-overlay {
+    width: 100vw;
+    max-width: 100vw;
+    overflow-x: hidden;
+}/* 1. Forza il calcolo corretto delle larghezze */
 * {
   margin: 0;
   padding: 0;
-  box-sizing: border-box;
+  box-sizing: border-box; /* FONDAMENTALE */
 }
 
-html {
+/* 2. Impedisce lo scroll orizzontale accidentale sul body */
+html, body {
   width: 100%;
   overflow-x: hidden;
   position: relative;
 }
 
-body { 
+/* 3. Assicurati che il main non superi mai la larghezza schermo */
+#app-container {
   width: 100%;
   max-width: 100vw;
-  overflow-x: hidden;
-  margin: 0;
-  padding: 0;
-  position: relative;
+  display: flex;
+  flex-direction: column; /* Default stack */
 }
 
-/* Previene overflow su tutti i container principali */
-#app-container,
-header,
-main,
-section,
-.overlay-full {
-  max-width: 100vw;
-  overflow-x: hidden;
+/* 4. Se usi la vista affiancata (Orizzontale) */
+.layout-side {
+  flex-direction: row !important;
+  flex-wrap: nowrap; /* Se vuoi che stiano affiancati */
 }
 
-/* ===================================
-   VARIABILI CSS
-   =================================== */
-
-:root {
+/* Se la vista side taglia a destra, assicurati che i figli si restringano */
+.layout-side > section {
+  flex: 1; 
+  min-width: 0; /* Evita che il contenuto interno forzi la larghezza */
+}:root {
     --bg-color: #ffffff;
     --text-color: #1c1c1e;
     --accent-color: #007aff;
@@ -46,400 +99,60 @@ section,
     --border-color: #e5e5ea;
     --gray-text: #8e8e93;
     --important-glow: rgba(255, 235, 59, 0.3);
-    --overlay-bg: #f9f9f9;
 }
 
-[data-theme="dark"] {
-    --bg-color: #1c1c1e;
-    --text-color: #f2f2f7;
-    --secondary-bg: #2c2c2e;
-    --border-color: #3a3a3c;
-    --gray-text: #8e8e93;
-    --overlay-bg: #121212;
-}
+body { font-family: var(--main-font); margin: 0; background: var(--bg-color); color: var(--text-color); overflow-x: hidden; }
 
-body {
-    font-family: var(--main-font);
-    background: var(--bg-color);
-    color: var(--text-color);
-    transition: background-color 0.3s, color 0.3s;
-    height: -webkit-fill-available;
-    min-height: 100dvh;
-    -webkit-overflow-scrolling: touch;
-}
-
-/* ===================================
-   HEADER
-   =================================== */
-
+/* --- HEADER --- */
 header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 0 20px;
-    border-bottom: 1px solid var(--border-color);
-    position: sticky;
-    top: 0;
-    background: var(--bg-color);
-    backdrop-filter: blur(10px);
-    z-index: 1000;
-    height: 60px;
-    width: 100%;
-    padding-top: env(safe-area-inset-top);
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 10px 20px; border-bottom: 1px solid var(--border-color);
+    position: sticky; top: 0; background: rgba(255, 255, 255, 0.9);
+    backdrop-filter: blur(10px); z-index: 100; height: 65px;
 }
-
-.header-left, 
-.header-right {
-    display: flex;
-    align-items: center;
-    gap: 15px;
-    flex: 1;
-}
-
-.header-right {
-    justify-content: flex-end;
-}
-
-/* Frecce navigazione */
-.nav-btn {
-    font-size: 2.8rem;
-    color: var(--accent-color);
-    background: none;
-    border: none;
+.header-left, .header-right { display: flex; align-items: center; gap: 15px; flex: 1; }
+.header-right { justify-content: flex-end; }
+/* --- HEADER: Frecce ingrandite e allineamento --- */
+.nav-btn { 
+    font-size: 2.8rem; /* Più grandi */
+    color: var(--accent-color); 
+    background: none; 
+    border: none; 
     cursor: pointer;
     display: flex;
     align-items: center;
     padding: 0;
     line-height: 1;
-    margin-top: -5px;
+    margin-top: -5px; /* Correzione ottica allineamento */
 }
 
-/* Icone header */
-.icon-btn {
-    background: none;
-    border: none;
-    color: var(--accent-color);
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 0;
-    transition: transform 0.2s;
-}
-
-.icon-btn svg {
-    width: 28px;
-    height: 28px;
-    stroke-width: 2px;
-}
-
-.icon-btn:active {
-    transform: scale(0.9);
-}
-
-/* Pillola data corrente */
-.date-title {
-    background: #eef6ff;
-    color: var(--accent-color);
-    padding: 8px 16px;
-    border-radius: 5px;
-    font-weight: 700;
-    cursor: pointer;
-    white-space: nowrap;
-    font-size: 1.1rem;
-}
-
-[data-theme="dark"] .date-title {
-    background: rgba(255, 255, 255, 0.08);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-    backdrop-filter: blur(5px);
-}
-
-/* ===================================
-   LAYOUT PRINCIPALE
-   =================================== */
-
-#app-container {
-    padding: 20px;
-    width: 100%;
-    max-width: 800px;
-    margin: 0 auto;
-    min-height: calc(100dvh - 60px);
-    box-sizing: border-box;
-}
-
-#app-container.layout-stack {
-    display: flex;
-    flex-direction: column;
-}
-
-#app-container.layout-side {
-    display: flex;
-    flex-direction: row;
-    gap: 30px;
-    max-width: 1100px;
-}
-
-#app-container.layout-side #timeline {
-    flex: 2;
-    min-width: 0;
-}
-
-#app-container.layout-side #dynamic-sections {
-    flex: 1;
-    min-width: 0;
-    position: sticky;
-    top: 85px;
-    height: fit-content;
-}
-
-/* ===================================
-   RIGHE AGENDA (TIMELINE)
-   =================================== */
-
-.hour-row {
-    display: flex;
-    align-items: center;
-    border-bottom: 1px solid var(--secondary-bg);
-    min-height: 55px;
-    padding: 0 10px;
-    padding-left: 10px;
-    transition: background 0.2s;
-    width: 100%;
-}
-
-.hour-row.important {
-    background: linear-gradient(90deg, var(--important-glow), transparent);
-}
-
-.hour-label {
-    width: 50px;
-    font-size: 0.8rem;
-    color: var(--gray-text);
+/* --- RIMOZIONE RETTANGOLI DAI PULSANTI --- */
+.settings-action-btn, 
+#cal-back-btn, 
+#close-calendar, 
+.icon-btn { 
+    background: none !important; 
+    border: none !important; 
+    box-shadow: none !important; 
+    padding: 5px 10px !important;
+    font-size: 1rem;
     font-weight: 600;
-    flex-shrink: 0;
-}
-
-/* Stellina importanza */
-.star-btn {
-    all: unset;
-    cursor: pointer;
-    font-size: 1.2rem;
-    color: var(--gray-text);
-    margin-right: 8px;
-    width: 25px;
-    display: flex;
-    justify-content: center;
-    transition: transform 0.2s, color 0.2s;
-    flex-shrink: 0;
-    opacity: 0.3;
-}
-
-.star-btn.active {
-    color: #ffcc00;
-    text-shadow: 0 0 5px rgba(255, 204, 0, 0.3);
-    opacity: 1;
-}
-
-.star-btn:active {
-    transform: scale(1.3);
-}
-
-.hour-row:not(.important) .star-btn {
-    opacity: 0.3;
-}
-
-.hour-row:focus-within .star-btn,
-.hour-row:hover .star-btn,
-.hour-row.important .star-btn {
-    opacity: 1;
-}
-
-/* Textarea eventi */
-textarea {
-    flex: 1;
-    border: none;
-    background: transparent;
-    resize: none;
-    outline: none;
-    padding: 15px 5px;
-    font-family: inherit;
-    font-size: 1rem;
-    color: var(--text-color);
-    width: 100%;
-    min-width: 0;
-}
-
-textarea.completed {
-    text-decoration: line-through;
-    opacity: 0.5;
-}
-
-/* Azioni riga */
-.row-actions {
-    display: none;
-    gap: 10px;
-    background: transparent;
-}
-
-.hour-row:focus-within .row-actions,
-.hour-row:hover .row-actions {
-    display: flex;
-}
-
-.action-icon {
-    background: none;
-    border: none;
-    box-shadow: none;
-    color: var(--gray-text);
-    cursor: pointer;
-    padding: 5px;
-    opacity: 0.6;
-    transition: opacity 0.2s, color 0.2s;
-}
-
-.action-icon:hover,
-.action-icon:active {
-    opacity: 1;
     color: var(--accent-color);
 }
 
-[data-theme="dark"] .action-icon {
-    color: var(--gray-text);
+#restore-settings { color: #ff3b30 !important; } /* Rosso ma senza blocco */
+
+/* --- PULSANTI CALENDARIO --- */
+#cal-back-btn, #close-calendar {
+    font-size: 1.1rem !important; /* Testo più pulito invece di frecce giganti */
 }
 
-/* ===================================
-   SEZIONI DINAMICHE (TASK/PASTI/NOTE)
-   =================================== */
-
-.section-box {
-    margin-bottom: 20px;
-    width: 100%;
-}
-
-.section-box h3 {
-    font-size: 0.75rem;
-    text-transform: uppercase;
-    color: var(--gray-text);
-    margin: 20px 0 10px 5px;
-}
-
-.rows-group {
-    background: var(--secondary-bg);
-    border-radius: 5px;
-    padding: 10px;
-    width: 100%;
-}
-
-.input-row {
-    display: flex;
+/* --- PILLOLA SETTIMANALE CON '+' --- */
+.weekly-day-header.date-title {
+    display: inline-flex;
     align-items: center;
-    padding: 10px 0;
-    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
-}
-
-.bullet {
-    width: 8px;
-    height: 8px;
-    background: var(--accent-color);
-    border-radius: 5px;
-    margin-right: 12px;
-    flex-shrink: 0;
-}
-
-.input-row input {
-    flex: 1;
-    border: none;
-    background: transparent;
-    outline: none;
-    font-family: inherit;
-    font-size: 1rem;
-    color: var(--text-color);
-    width: 100%;
-    min-width: 0;
-}
-
-/* Note generali */
-.rows-group:has(#general-notes) {
-    padding: 0;
-    overflow: hidden;
-}
-
-#general-notes {
-    width: 100%;
-    min-height: 200px;
-    background: var(--secondary-bg);
-    border: none;
-    padding: 15px;
-    font-family: inherit;
-    font-size: 1rem;
-    line-height: 1.5;
-    resize: vertical;
-    display: block;
-    box-sizing: border-box;
-    color: var(--text-color);
-}
-
-/* ===================================
-   LAYOUT SETTIMANALE
-   =================================== */
-
-.weekly-day-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    width: 100%;
-    background: var(--secondary-bg);
-    padding: 12px 16px;
-    border-radius: 5px;
-    margin: 15px 0 8px;
-    box-sizing: border-box;
-}
-
-.weekly-day-header .date-title {
-    background: transparent;
-    padding: 0;
-    color: var(--accent-color);
-    font-size: 1.3rem;
-    font-weight: 700;
-    border: none;
-    box-shadow: none;
-}
-
-[data-theme="dark"] .weekly-day-header {
-    background: rgba(255, 255, 255, 0.05);
-    border-bottom-color: rgba(255, 255, 255, 0.1);
-}
-
-[data-theme="dark"] .weekly-day-header .date-title {
-    background: transparent;
-}
-
-.weekly-plus-btn {
-    background: none;
-    border: none;
-    color: var(--accent-color);
-    font-size: 1.6rem;
-    font-weight: 400;
-    cursor: pointer;
-    padding: 0 10px;
-    line-height: 1;
-}
-
-.weekly-day-container .hour-row {
-    background: white;
-    margin-bottom: 1px;
-    border-radius: 4px;
-}
-
-.weekly-day-container .hour-row:hover {
-    background: #f9f9f9;
-}
-
-.weekly-row .star-btn {
-    font-size: 1rem;
-    margin-right: 5px;
+    gap: 12px;
+    padding: 8px 20px;
 }
 
 .plus-icon {
@@ -447,227 +160,118 @@ textarea.completed {
     font-weight: 400;
     color: var(--accent-color);
 }
+.icon-btn { background: none; border: none; color: var(--gray-text); cursor: pointer; }
+.icon-btn svg { width: 28px; height: 28px; }
 
-/* ===================================
-   OVERLAYS (IMPOSTAZIONI/CALENDARIO/POP-UP)
-   =================================== */
-
-.overlay-full {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100vw;
-    height: 100dvh;
-    background: var(--overlay-bg);
-    z-index: 2000;
-    overflow-y: auto;
-    overflow-x: hidden;
-    padding-bottom: env(safe-area-inset-bottom);
+.date-title { 
+    background: #eef6ff; color: var(--accent-color); padding: 8px 16px; 
+    border-radius: 5px; font-weight: 700; cursor: pointer; white-space: nowrap;
 }
 
-.overlay-header {
-    display: grid;
-    grid-template-columns: 1fr auto 1fr;
-    align-items: center;
-    padding: 15px 20px;
-    background: var(--bg-color);
-    border-bottom: 1px solid var(--border-color);
-}
+/* --- LAYOUTS --- */
+#app-container { padding: 20px; max-width: 800px; margin: 0 auto; }
+#app-container.layout-side { display: flex; flex-direction: row; gap: 30px; max-width: 1100px; }
+#app-container.layout-side #timeline { flex: 2; }
+#app-container.layout-side #dynamic-sections { flex: 1; position: sticky; top: 85px; height: fit-content; }
 
-.settings-title {
-    font-size: 1.1rem;
-    font-weight: 700;
-    color: var(--text-color);
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    background: none;
-    padding: 0;
+/* --- RIGHE AGENDA --- */
+.hour-row { 
+    display: flex; align-items: center; border-bottom: 1px solid var(--secondary-bg); 
+    min-height: 55px; padding: 0 10px; transition: background 0.2s;
 }
-
-/* Pulsanti header overlay - SENZA RETTANGOLI */
-.settings-action-btn,
-#close-calendar {
-    all: unset;
-    background: none !important;
-    border: none !important;
-    box-shadow: none !important;
-    color: var(--accent-color);
-    padding: 5px 10px !important;
-    font-size: 1rem;
-    font-weight: 600;
-    cursor: pointer;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
+.hour-row.important { background: linear-gradient(90deg, var(--important-glow), transparent); }
+.hour-label { width: 50px; font-size: 0.8rem; color: var(--gray-text); font-weight: 600; }
+textarea { 
+    flex: 1; border: none; background: transparent; resize: none; outline: none; 
+    padding: 15px 5px; font-family: inherit; font-size: 1rem;
 }
+textarea.completed { text-decoration: line-through; opacity: 0.5; }
 
-#restore-settings {
-    color: #ff3b30 !important;
-    background: none !important;
-    border: none !important;
-    box-shadow: none !important;
-    justify-self: start;
+.row-actions { display: none; gap: 10px; }
+.hour-row:focus-within .row-actions, .hour-row:hover .row-actions { display: flex; }
+.action-icon { background: none; border: none; color: var(--gray-text); cursor: pointer; padding: 5px; }
+.star-btn.active { color: #ffcc00; }
+
+/* --- BOX DINAMICI --- */
+.section-box h3 { font-size: 0.75rem; text-transform: uppercase; color: var(--gray-text); margin: 20px 0 10px 5px; }
+.rows-group { background: var(--secondary-bg); border-radius: 5px; padding: 10px; }
+.input-row { display: flex; align-items: center; padding: 10px 0; border-bottom: 1px solid rgba(0,0,0,0.05); }
+.bullet { width: 8px; height: 8px; background: var(--accent-color); border-radius: 5px; margin-right: 12px; }
+.input-row input { flex: 1; border: none; background: transparent; outline: none; font-family: inherit; font-size: 1rem; }
+
+/* --- OVERLAYS --- */
+.overlay-full { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #f9f9f9; z-index: 1000; overflow-y: auto; }
+.overlay-header { 
+    display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; 
+    padding: 15px 20px; background: white; border-bottom: 1px solid var(--border-color);
 }
+.settings-content { padding: 20px; max-width: 500px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px; }
+.setting-group { background: white; border-radius: 5px; padding: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+.setting-group label { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--secondary-bg); }
 
-#exit-settings {
-    justify-self: end;
-}
+/* --- WHEEL PICKER --- */
+#wheel-picker-container { height: 150px; background: var(--secondary-bg); border-radius: 5px; position: relative; overflow: hidden; margin: 15px 0; }
+.wheel-wrapper { display: flex; justify-content: center; align-items: center; height: 100%; mask-image: linear-gradient(to bottom, transparent, black 40%, black 60%, transparent); }
+.wheel-column { flex: 1; height: 100%; overflow-y: scroll; scroll-snap-type: y mandatory; scrollbar-width: none; text-align: center; }
+.wheel-column::-webkit-scrollbar { display: none; }
+.wheel-item { height: 40px; line-height: 40px; font-size: 1.2rem; opacity: 0.3; scroll-snap-align: center; }
+.wheel-item.selected { opacity: 1; color: var(--accent-color); font-weight: bold; }
+.wheel-selection-indicator { position: absolute; top: 50%; transform: translateY(-50%); width: 100%; height: 40px; border-top: 1px solid rgba(0,0,0,0.1); border-bottom: 1px solid rgba(0,0,0,0.1); pointer-events: none; }
 
-/* Freccia calendario GRANDE e senza rettangolo */
-#cal-back-btn {
-    all: unset;
-    background: none !important;
-    border: none !important;
-    box-shadow: none !important;
-    color: var(--accent-color);
-    font-size: 2.8rem !important;
-    padding: 0 15px !important;
-    cursor: pointer;
-    line-height: 1;
-    justify-self: start;
-}
+/* --- CALENDAR GRID --- */
+.months-grid, .days-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; padding: 10px; }
+.days-grid { grid-template-columns: repeat(7, 1fr); }
+.cal-box { background: var(--secondary-bg); border: none; padding: 15px 5px; border-radius: 5px; font-weight: 600; color: var(--accent-color); cursor: pointer; }
+.cal-box.today { background: var(--accent-color); color: white; }
 
-/* Pulsanti pop-up nuovo evento */
-#close-quick-add,
-#save-quick-event {
-    all: unset;
-    background: none !important;
-    border: none !important;
-    box-shadow: none !important;
-    color: var(--accent-color);
-    padding: 5px 10px !important;
-    font-size: 1rem;
-    font-weight: 600;
-    cursor: pointer;
-}
-
-#close-quick-add {
-    color: #ff3b30 !important;
-    justify-self: start;
-}
-
-#save-quick-event {
-    justify-self: end;
-}
-
-.btn-light-cancel {
-    color: #ff3b30 !important;
-}
-
-.btn-light-save {
-    color: var(--accent-color) !important;
-}
-
-/* Contenuto overlay */
-.settings-content {
-    padding: 20px;
-    max-width: 500px;
-    margin: 0 auto;
+.hidden { display: none !important; }
+/* --- AGGIORNAMENTO LAYOUT SETTIMANALE (Punto 1) --- */
+/* Questo container verrà usato nel JS per ogni blocco giorno nella vista settimanale */
+.weekly-day-header {
     display: flex;
-    flex-direction: column;
-    gap: 20px;
-    width: 100%;
-    box-sizing: border-box;
-}
-
-.setting-group {
-    background: white;
-    padding: 15px;
-    border-radius: 5px;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
-    width: 100%;
-}
-
-[data-theme="dark"] .setting-group {
-    background: var(--bg-color);
-}
-
-.setting-group h3 {
-    color: var(--gray-text);
-    font-size: 0.75rem;
-    text-transform: uppercase;
-    margin: 10px 0 10px 5px;
-    letter-spacing: 0.5px;
-}
-
-.setting-group label {
-    display: flex;
-    justify-content: space-between;
+    justify-content: space-between; /* Spinge il nome a sx e il + a dx */
     align-items: center;
+    width: 100%;
     padding: 10px 0;
-    border-bottom: 1px solid var(--secondary-bg);
-    font-weight: 500;
+    margin-bottom: 5px;
 }
 
-.setting-group label:last-child {
-    border-bottom: none;
-}
-
-/* Input e select nelle impostazioni */
-.setting-group select,
-.setting-group input[type="number"],
-.setting-group input[type="color"] {
-    all: unset;
-    background-color: #efeff4;
-    border-radius: 5px;
-    padding: 6px 30px 6px 12px;
-    font-size: 0.95rem;
-    font-weight: 600;
+.weekly-plus-btn {
+    background: none;
+    border: none;
     color: var(--accent-color);
-    box-sizing: border-box;
+    font-size: 1.8rem;
+    font-weight: 400;
     cursor: pointer;
-    text-align: right;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%23007aff' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
-    background-repeat: no-repeat;
-    background-position: right 10px center;
-    background-size: 12px;
+    padding: 0 10px;
+    line-height: 1;
 }
 
-[data-theme="dark"] .setting-group select,
-[data-theme="dark"] .setting-group input[type="number"],
-[data-theme="dark"] .setting-group input[type="color"] {
-    background-color: var(--secondary-bg);
+/* --- OTTIMIZZAZIONE POP-UP NUOVO EVENTO (Punto 1) --- */
+#quick-add-overlay .settings-content {
+    gap: 10px;
 }
 
-.setting-group input[type="color"] {
-    width: 50px;
-    height: 30px;
-    padding: 0;
-    background-image: none;
-    border: 3px solid #efeff4;
-}
-
-[data-theme="dark"] .setting-group input[type="color"] {
-    border: 3px solid var(--secondary-bg);
-}
-
-input[type="number"] {
-    width: 70px;
-    text-align: center;
-    padding-right: 10px !important;
-    background-image: none !important;
-}
-
-/* ===================================
-   CALENDARIO - RIPRISTINATO ORIGINALE
-   =================================== */
-
-#calendar-content {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
+.modern-textarea {
     width: 100%;
+    min-height: 120px;
+    border: 1px solid var(--border-color) !important;
+    border-radius: 5px;
+    padding: 15px !important;
+    margin-top: 15px;
+    background: white !important;
+    box-sizing: border-box;
+    font-size: 1.1rem;
 }
 
-/* Griglia mesi */
-.months-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 6px;
-    padding: 10px;
+/* --- CALENDARIO MENSILE: GRIGLIA E FRECCE (Punto 3) --- */
+/* Ingrandimento specifico freccia navigazione calendario */
+#cal-back-btn {
+    font-size: 2.2rem !important;
+    padding: 0 15px !important;
 }
 
-/* Header giorni settimana */
+/* Container testata giorni (Lun, Mar, Mer...) */
 .calendar-weekdays {
     display: grid;
     grid-template-columns: repeat(7, 1fr);
@@ -680,39 +284,25 @@ input[type="number"] {
     text-transform: uppercase;
 }
 
-/* Griglia giorni */
+/* Griglia giorni corretta */
 .days-grid {
     display: grid;
-    grid-template-columns: repeat(7, 1fr);
-    gap: 6px;
-    padding: 10px;
+    grid-template-columns: repeat(7, 1fr); /* 7 colonne fisse */
+    gap: 8px;
+    padding: 0 20px 20px 20px;
 }
 
 .cal-box {
-    background: var(--secondary-bg);
-    border: none;
-    padding: 15px 5px;
-    border-radius: 5px;
-    font-weight: 600;
-    color: var(--accent-color);
-    cursor: pointer;
+    aspect-ratio: 1 / 1; /* Rende i giorni quadrati */
     display: flex;
     flex-direction: column;
     justify-content: center;
     align-items: center;
     position: relative;
-    aspect-ratio: 1 / 1;
     font-size: 0.9rem;
 }
 
-.cal-box.today {
-    background: var(--accent-color);
-    color: white;
-    font-size: 1.1rem !important;
-    font-weight: 800 !important;
-    border: 2px solid white;
-}
-
+/* Indicatore visivo evento (pallino) */
 .cal-box.has-event::after {
     content: '';
     position: absolute;
@@ -727,45 +317,274 @@ input[type="number"] {
     background: white;
 }
 
+/* Fix per i giorni "vuoti" all'inizio del mese */
 .cal-box.empty {
     background: transparent;
     cursor: default;
 }
 
-/* ===================================
-   POP-UP NUOVO EVENTO
-   =================================== */
-
-#quick-add-overlay .settings-content {
-    gap: 10px;
+/* --- CALENDARIO MENSILE COMPATTO (Punto 1) --- */
+.months-grid { 
+    gap: 6px; 
+    padding: 10px;
+     grid-template-columns: repeat(3, 1fr);
 }
 
-.quick-add-date-label {
-    font-size: 0.9rem;
-    color: var(--gray-text);
-    margin-bottom: 10px;
+.days-grid { 
+    gap: 4px; 
+    padding: 0 10px 10px; 
 }
 
-.title-container {
-    text-align: center;
+.cal-box { 
+    padding: 6px 2px; /* Più piccolo */
+    font-size: 0.75rem; 
+    border-radius: 5px;
+    min-height: 35px;
 }
 
-.date-title-alt {
-    font-size: 1.1rem;
-    font-weight: 700;
-    color: var(--text-color);
-}
-
-/* Time picker */
-#time-picker-trigger {
+/* --- LAYOUT SETTIMANALE: BLOCCO TITOLO (Punto 2) --- */
+.weekly-day-header {
     display: flex;
     justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    padding: 12px 16px; /* Spaziatura interna al blocco */
+    background: var(--secondary-bg); /* Blocco di sfondo */
+    border-radius: 5px;
+    margin: 15px 0 8px 0;
+    box-sizing: border-box;
+    
+    
+}
+
+.weekly-day-header .date-title {
+    background: none; /* Rimuoviamo il vecchio sfondo della pillola */
+    padding: 0;
+    color: var(--text-color);
+    font-size: 1.1rem; /* Scritta più grande */
+    font-weight: 500;
+}
+
+.weekly-plus-btn {
+    font-size: 1.6rem;
+    color: var(--accent-color);
+    padding: 0;
+    margin: 0;
+    line-height: 1;
+}
+
+/* --- POP-UP: TIME PICKER RIMPICCIOLITO (Punto 3) --- */
+#wheel-picker-container { 
+    height: 100px; /* Ridotto da 150px */
+    margin: 10px 0;
+}
+
+.wheel-wrapper {
+    height: 100%;
+}
+
+.wheel-item { 
+    height: 30px; /* Ridotto da 40px */
+    line-height: 30px; 
+    font-size: 1rem; 
+}
+
+.wheel-selection-indicator { 
+    height: 30px; 
+}
+/* Giorno corrente: Scritta più grande e visibile */
+.cal-box.today {
+    font-size: 1.1rem !important;
+    font-weight: 800 !important;
+    border: 2px solid white;
+}
+
+/* Sfondo pallino evento ridotto */
+.cal-box.has-event::after {
+    width: 3px;
+    height: 3px;
+    bottom: 2px;
+}
+/* --- LAYOUT SETTIMANALE: COLORE DINAMICO --- */
+.weekly-day-header .date-title {
+    background: none;
+    color: var(--accent-color); /* Utilizza il colore delle impostazioni */
+    font-size: 1.3rem;
+    font-weight: 700;
+}
+
+/* --- OTTIMIZZAZIONE NOTE (Area totale) --- */
+#meals-section, .section-box { margin-bottom: 20px; }
+
+.rows-group:has(#general-notes) {
+    padding: 0; /* Rimuove padding interno per far aderire la textarea */
+    overflow: hidden;
+}
+
+#general-notes {
+    width: 100%;
+    min-height: 200px; /* Area più spaziosa */
+    background: var(--secondary-bg);
+    border: none;
+    padding: 15px;
+    font-family: inherit;
+    font-size: 1rem;
+    line-height: 1.5;
+    resize: vertical;
+    display: block;
+    box-sizing: border-box;
+}
+
+/* Nuovo stile selettore orario nel Pop-up */
+.quick-time-select {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    justify-content: center;
+    margin: 15px 0;
+}
+.quick-time-select select {
+    padding: 10px;
+    border-radius: 5px;
+    border: 1px solid var(--border-color);
+    font-size: 1.1rem;
+    background: white;
+}
+/* --- CALENDARIO: RIDUZIONE DIMENSIONE BOX SENZA ALTERARE IL LAYOUT --- */
+
+/* Griglia dei GIORNI: manteniamo le 7 colonne, ma rimpiccioliamo i quadrati */
+/* --- CALENDARIO: GRIGLIE COMPATTE E VICINE --- */
+
+/* Contenitore generale dei giorni: lo stringiamo attorno ai box */
+.days-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 36px); /* 7 colonne della larghezza esatta dei box */
+    gap: 2px;                               /* Spazio minimo tra i quadratini */
+    justify-content: center;                /* Centra l'intero blocco nella schermata */
+    padding: 10px 0;
+}
+
+/* Allineamento testata giorni (Lun, Mar...) */
+.calendar-weekdays {
+    display: grid;
+    grid-template-columns: repeat(7, 36px); /* Deve combaciare esattamente con days-grid */
+    gap: 2px;                               /* Stesso gap della griglia numeri */
+    justify-content: center;
+    margin-bottom: 2px;                     /* Avvicina la testata ai numeri */
+}
+
+.calendar-weekdays div {
+    font-size: 0.65rem;
+    font-weight: 700;
+    text-align: center;
+    color: var(--gray-text);
+    text-transform: uppercase;
+}
+
+/* Quadratini dei giorni */
+.days-grid .cal-box {
+    width: 36px;
+    height: 36px;
+    font-size: 0.85rem;
+    border-radius: 5px;
+    margin: 0; /* Rimosso auto per tenerli vicini */
+}
+
+/* Griglia dei mesi: più compatta */
+.months-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 90px); /* 3 colonne strette */
+    gap: 4px;
+    justify-content: center;
+    padding: 10px 0;
+}
+
+/* Box dei mesi */
+.months-grid .cal-box {
+    width: 90px;
+    height: 40px;
+    font-size: 0.75rem;
+    margin: 0;
+}
+
+/* Giorno Corrente: Focus sul font */
+.cal-box.today {
+    background: var(--accent-color);
+    color: white;
+    font-size: 1.1rem !important;
+    font-weight: 800;
+}
+
+/* Overlay Header: lo rendiamo più stretto per coerenza */
+#calendar-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center; /* Centra tutto il contenuto */
+}
+
+/* --- NUOVO SELETTORE ORARIO: DROPDOWN STYLE --- */
+.time-select-wrapper {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 12px;
+    background: var(--secondary-bg);
+    padding: 15px;
+    border-radius: 5px;
+    margin: 10px 0;
+}
+
+.time-column {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+}
+
+.time-column label {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    color: var(--gray-text);
+    font-weight: 700;
+}
+
+/* Menu a tendina personalizzato */
+.modern-select {
+    appearance: none;
+    background: white;
+    border: 1px solid var(--border-color);
+    padding: 10px 15px;
+    border-radius: 5px;
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: var(--text-color);
+    cursor: pointer;
+    text-align: center;
+    min-width: 70px;
+}
+
+.modern-select:focus {
+    border-color: var(--accent-color);
+    outline: none;
+}
+
+.time-separator {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--gray-text);
+    margin-top: 15px;
+}
+/* --- NUOVO SELETTORE ORARIO COMPATTO --- */
+#time-picker-trigger {
+    display: flex;
+    justify-content: space-between; /* "Ora:" a sx, "Orario" a dx */
     align-items: center;
     padding: 12px 0;
     border-bottom: 1px solid var(--secondary-bg);
     cursor: pointer;
 }
 
+/* Stilizziamo l'input per farlo sembrare un testo con freccetta */
 #event-time-input {
     border: none;
     background: transparent;
@@ -779,26 +598,604 @@ input[type="number"] {
     padding-right: 5px;
 }
 
-/* Wheel picker nascosto */
+/* Rimuoviamo la sezione della vecchia rotellina */
 #wheel-picker-container {
-    display: none !important;
+    display: none !important; /* Sparisce definitivamente */
 }
 
-.wheel-wrapper {
-    display: none;
+/* Overlay header nel pop-up più pulito */
+.quick-add-date-label {
+    font-size: 0.9rem;
+    color: var(--gray-text);
+    margin-bottom: 10px;
+}
+/* Assicuriamoci che le azioni siano visibili e ben posizionate */
+.weekly-day-container .hour-row {
+    background: white; /* Gli eventi nel settimanale spiccano sul fondo dell'app */
+    margin-bottom: 1px;
+    border-radius: 4px;
 }
 
-/* Textarea evento */
-#quick-text,
-.modern-textarea {
+.weekly-day-container .hour-row:hover {
+    background: #f9f9f9;
+}
+
+/* Mostra le azioni al passaggio del mouse o al touch */
+.hour-row:hover .row-actions {
+    display: flex;
+    background: rgba(255,255,255,0.9);
+    padding-left: 10px;
+}
+/* --- NUOVO STILE IMPOSTAZIONI (BACK TO OLD STYLE) --- */
+
+#settings-overlay { 
+    background: #f9f9f9; /* Sfondo generale grigio chiarissimo */
+}
+
+.overlay-header {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr; /* Simmetria perfetta */
+    align-items: center;
+    padding: 15px 20px;
+    background: white;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.settings-title {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--text-color);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* Pulsanti Header (Ripristina e Chiudi) */
+.settings-action-btn {
+    all: unset;
+    background-color: #efeff4 !important; /* Il blocco grigetto richiesto */
+    color: var(--accent-color);
+    padding: 8px 14px;
+    border-radius: 5px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    text-align: center;
+    transition: background 0.2s;
+}
+
+#restore-settings { color: #ff3b30 !important; } /* Rosso per il ripristino */
+
+/* Contenitore Gruppi */
+.settings-content {
+    padding: 20px;
+    max-width: 550px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 25px;
+}
+
+/* Box Bianco (Gruppo) */
+.setting-group {
+    background: white;
+    padding: 10px 15px;
+    border-radius: 5px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+}
+
+.setting-group h3 {
+    color: var(--gray-text);
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    margin: 10px 0 10px 5px;
+    letter-spacing: 0.5px;
+}
+
+/* Righe all'interno dei gruppi */
+.setting-group label {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 5px;
+    border-bottom: 1px solid #f2f2f7;
+    font-weight: 500;
+}
+
+.setting-group label:last-child { border-bottom: none; }
+
+/* INPUT E SELECT (Stile iOS con freccetta) */
+.setting-group select, 
+.setting-group input[type="number"],
+.setting-group input[type="color"] {
+    all: unset;
+    background-color: #efeff4; /* Grigetto interno */
+    border-radius: 5px;
+    padding: 6px 30px 6px 12px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--accent-color);
+    box-sizing: border-box;
+    cursor: pointer;
+    text-align: right;
+    
+    /* Freccetta dropdown personalizzata */
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%23007aff' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+    background-size: 12px;
+}
+
+.setting-group input[type="color"] {
+    width: 50px;
+    height: 30px;
+    padding: 0;
+    background-image: none; /* Rimuoviamo freccia per il colore */
+    border: 3px solid #efeff4;
+}
+
+input[type="number"] { width: 70px; text-align: center; padding-right: 10px !important; background-image: none !important; }
+/* --- POSIZIONAMENTO STELLINA A SINISTRA --- */
+
+.hour-row {
+    display: flex;
+    align-items: center;
+    padding-left: 10px; /* Spazio dal bordo sinistro */
+}
+
+.star-btn {
+    all: unset;
+    cursor: pointer;
+    font-size: 1.2rem;
+    color: var(--gray-text); /* Grigio di default */
+    margin-right: 8px; /* Spazio tra stella e orario */
+    width: 25px;
+    display: flex;
+    justify-content: center;
+    transition: transform 0.2s, color 0.2s;
+}
+
+/* Colore Giallo quando attiva */
+.star-btn.active {
+    color: #ffcc00 !important;
+    text-shadow: 0 0 5px rgba(255, 204, 0, 0.3);
+}
+
+/* Effetto al tocco */
+.star-btn:active {
+    transform: scale(1.3);
+}
+
+/* Nascondiamo la stella se la riga è vuota (opzionale, per pulizia) */
+.hour-row:not(.important) .star-btn {
+    opacity: 0.3;
+}
+.hour-row:focus-within .star-btn, 
+.hour-row:hover .star-btn, 
+.hour-row.important .star-btn {
+    opacity: 1;
+}
+
+/* Layout Settimanale: manteniamo la stella a sinistra */
+.weekly-row .star-btn {
+    font-size: 1rem;
+    margin-right: 5px;
+}
+/* --- STILE TITOLI (OLD VERSION LOOK) --- */
+
+.date-title { 
+    /* Header principale */
+    font-size: 1.1rem !important; /* Più piccolo */
+    font-weight: 600 !important;   /* Meno bold (Semibold) */
+    background: #eef6ff; 
+    color: var(--accent-color); 
+    padding: 8px 16px; 
+    border-radius: 5px; 
+    text-transform: none !important; /* Rimuove tutto maiuscolo */
+    letter-spacing: -0.01em;
+}
+
+.weekly-day-header {
+    background: var(--secondary-bg);
+    border-radius: 5px;
+    padding: 10px 16px;
+    margin: 20px 0 10px;
+}
+
+.weekly-day-header .date-title {
+    /* Titolo nei blocchi settimanali */
+    font-size: 1.05rem !important; /* Ancora più discreto */
+    font-weight: 600 !important;
+    background: none !important;  /* Rimuove lo sfondo bluastro dalla pillola interna */
+    padding: 0;
+    color: var(--accent-color);
+    text-transform: none !important;
+}
+
+.weekly-plus-btn {
+    font-size: 1.6rem;
+    font-weight: 300; /* Il "+" deve essere sottile */
+    color: var(--accent-color);
+}
+/* --- HEADER COMPATTO (OLD VERSION SIZE) --- */
+header {
+    height: 60px; /* Più basso */
+    padding: 0 15px; /* Meno padding laterale */
+}
+
+/* Titolo Giorno Corrente (Pillola) */
+.date-title { 
+    font-size: 1.3rem !important; /* Più piccolo */
+    font-weight: 600 !important;
+    padding: 5px 12px; /* Meno spazio interno per renderlo più sottile */
+    border-radius: 5px;
+}
+
+/* Ridimensionamento icone per adattarle all'header più basso */
+.icon-btn svg {
+    width: 24px;  /* Da 30px a 24px */
+    height: 24px;
+}
+
+.nav-btn {
+    font-size: 2.2rem; /* Frecce leggermente più piccole */
+    margin-top: 2px;
+}
+/* --- HEADER IMPOSTAZIONI COMPATTO --- */
+#settings-overlay .overlay-header {
+    padding: 10px 15px; /* Più stretto */
+}
+
+.settings-title {
+    font-size: 0.95rem; /* Font ridotto */
+    font-weight: 700;
+    /* Rimuoviamo eventuali padding eccessivi o background ingombranti */
+    background: none; 
+    padding: 0;
+}
+
+/* Pulsanti Ripristina/Chiudi più piccoli in linea con il titolo */
+.settings-action-btn {
+    padding: 5px 12px;
+    font-size: 0.8rem;
+    border-radius: 6px;
+}
+/* --- BLOCCHI SETTIMANALI PIÙ BASSI --- */
+.weekly-day-header {
+    padding: 8px 12px; /* Riduciamo da 10px a 8px */
+    margin: 15px 0 8px; /* Meno spazio tra i blocchi */
+}
+
+.weekly-day-header .date-title {
+    font-size: 0.95rem !important; /* Allineato al titolo principale */
+}
+
+.weekly-plus-btn {
+    font-size: 1.4rem; /* Più piccolo */
+}
+/* --- PULSANTI IMPOSTAZIONI (BOX RIDOTTI) --- */
+
+.settings-action-btn {
+    all: unset;
+    background-color: #efeff4 !important; /* Il blocco grigetto */
+    color: var(--accent-color);
+    
+    /* Riduzione Padding: 4px verticale, 10px orizzontale per un look aderente */
+    padding: 4px 10px !important; 
+    
+    border-radius: 8px;
+    font-size: 0.8rem; /* Font leggermente più piccolo e pulito */
+    font-weight: 600;
+    cursor: pointer;
+    
+    /* Forza il blocco a stringersi attorno al testo */
+    display: inline-flex; 
+    align-items: center;
+    justify-content: center;
+    width: auto !important; 
+    min-width: 60px; /* Larghezza minima per consistenza, ma non eccessiva */
+    
+    transition: background 0.2s, opacity 0.2s;
+}
+
+/* Allineamento all'interno della griglia dell'header */
+#restore-settings {
+    justify-self: start; /* Attaccato a sinistra ma largo solo quanto il testo */
+    color: #ff3b30 !important;
+}
+
+#exit-settings {
+    justify-self: end; /* Attaccato a destra ma largo solo quanto il testo */
+}
+
+/* Effetto al tocco */
+.settings-action-btn:active {
+    background-color: #e5e5ea !important;
+    opacity: 0.8;
+}
+/* --- HEADER: ALLINEAMENTO E COLORI DINAMICI --- */
+
+header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center; /* Centra verticalmente tutti i blocchi */
+    height: 55px;
+    padding: 0 20px;
+}
+
+/* Icone: diventano del colore scelto nelle impostazioni */
+.icon-btn {
+    background: none;
+    border: none;
+   
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    transition: transform 0.2s;
+}
+
+/* Icona Switch e Impostazioni: Più grandi e Bold */
+.icon-btn svg {
+    width: 26px; /* Più grande */
+    height: 26px;
+    stroke-width: 2px; /* Più grassetta */
+}
+
+/* Frecce laterali: anche esse coordinate */
+.nav-btn {
+    color: var(--accent-color);
+    font-size: 2.2rem;
+    display: flex;
+    align-items: center;
+    margin-top: 0; /* Reset per allineamento perfetto */
+}
+
+/* Allineamento orizzontale dei blocchi laterali */
+.header-left, .header-right {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    flex: 1;
+}
+
+/* Effetto al passaggio per feedback visivo */
+.icon-btn:active {
+    transform: scale(0.9);
+}
+header {
+    position: sticky;
+    top: 0;
     width: 100%;
-    min-height: 120px;
+    background: rgba(255, 255, 255, 0.9);
+    backdrop-filter: blur(10px);
+    z-index: 1000;
+    padding-top: env(safe-area-inset-top); /* Sposta il contenuto dell'header sotto la tacca del telefono */
+    height: auto;
+    min-height: 55px;
+}
+/* --- FIX MOBILE VIEWPORT --- */
+html, body {
+    height: -webkit-fill-available; /* Fix per Safari iOS */
+    min-height: 100dvh; /* Usa la Dynamic Viewport Height (moderna) */
+    margin: 0;
+    padding: 0;
+    overflow-x: hidden;
+    overflow-y: auto; /* Permette lo scroll naturale */
+    -webkit-overflow-scrolling: touch; /* Scroll fluido su iOS */
+}
+
+/* Assicuriamoci che il container principale non sia bloccato */
+#app-container {
+    padding: 10px 15px 120px; /* Aumentato padding inferiore per non finire sotto la barra browser */
+    min-height: calc(100dvh - 55px); /* Altezza totale meno l'header */
+    box-sizing: border-box;
+}
+
+/* Fix per gli Overlay (Impostazioni, Calendario, Pop-up) */
+.overlay-full, #settings-overlay, #calendar-overlay, #quick-add-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100dvh; /* Altezza dinamica per coprire tutto lo schermo mobile */
+    background: #f9f9f9;
+    z-index: 2000;
+    overflow-y: auto;
+    padding-bottom: env(safe-area-inset-bottom); /* Rispetta lo spazio della barra home di iPhone */
+}
+/* --- PULSANTI POP-UP E IMPOSTAZIONI (BOX ADERENTI) --- */
+
+.settings-action-btn {
+    all: unset;
+    background-color: #efeff4 !important; /* Grigetto di sfondo */
+    border-radius: 8px;
+    
+    /* Padding: 6px sopra/sotto, 14px destra/sinistra per un look perfetto */
+    padding: 6px 14px !important; 
+    
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    
+    /* Forza il blocco a stringersi attorno al testo invece di allungarsi */
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: auto !important; 
+    min-width: 75px; /* Larghezza minima garantita per l'estetica */
+    
+    transition: background 0.2s, opacity 0.2s;
+}
+
+/* Posizionamento nel pop-up (Header Grid) */
+#close-quick-add, #restore-settings {
+    justify-self: start; /* Allineato a sinistra, ma largo quanto il testo */
+}
+
+#save-quick-event, #exit-settings {
+    justify-self: end; /* Allineato a destra, ma largo quanto il testo */
+}
+
+/* Colori specifici per i testi */
+.btn-light-cancel {
+    color: #ff3b30 !important; /* Rosso per Annulla */
+}
+
+.btn-light-save {
+    color: var(--accent-color) !important; /* Blu (o colore tema) per Salva */
+}
+
+/* Effetto feedback al tocco */
+.settings-action-btn:active {
+    background-color: #e5e5ea !important;
+    transform: scale(0.96);
+}
+/* --- CONFIGURAZIONE TEMI --- */
+:root {
+    /* Tema Chiaro (Default) */
+    --bg-color: #ffffff;
+    --text-color: #1c1c1e;
+    --secondary-bg: #f2f2f7;
+    --border-color: #e5e5ea;
+    --gray-text: #8e8e93;
+    --overlay-bg: #f9f9f9;
+}
+
+[data-theme="dark"] {
+    /* Tema Scuro */
+    --bg-color: #1c1c1e;
+    --text-color: #f2f2f7;
+    --secondary-bg: #2c2c2e;
+    --border-color: #3a3a3c;
+    --gray-text: #8e8e93;
+    --overlay-bg: #121212;
+}
+
+/* Applichiamo le variabili a tutto il sito */
+body {
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    transition: background-color 0.3s, color 0.3s;
+}
+
+header {
+    background: var(--bg-color);
+    border-bottom: 1px solid var(--border-color);
+}
+
+.setting-group, .overlay-header {
+    background: var(--bg-color) !important;
+}
+
+#settings-overlay, #calendar-overlay, #quick-add-overlay {
+    background: var(--overlay-bg) !important;
+}
+
+textarea, input, select {
+    color: var(--text-color) !important;
+}
+
+/* I blocchi grigetti delle impostazioni devono adattarsi */
+.settings-action-btn, .setting-group select, .setting-group input {
     background-color: var(--secondary-bg) !important;
+}
+/* --- CORREZIONE CONTRASTO GIORNO CORRENTE (DARK MODE) --- */
+
+[data-theme="dark"] .date-title {
+    /* Usiamo un grigio grafite profondo con una punta di trasparenza */
+    background: rgba(255, 255, 255, 0.08) !important; 
+    
+    /* Il testo mantiene l'accent color scelto, ma lo rendiamo leggermente più luminoso */
+    color: var(--accent-color) !important;
+    
+    /* Aggiungiamo un leggero bordo per dare profondità */
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    
+    /* Ombra morbida per far "galleggiare" il blocco */
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    
+    backdrop-filter: blur(5px); /* Effetto vetro sfocato */
+}
+
+/* Correzione anche per i blocchi nel layout settimanale */
+[data-theme="dark"] .weekly-day-header {
+    background: rgba(255, 255, 255, 0.05) !important;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+/* --- PULIZIA ICONE AZIONI (NO SFONDO) --- */
+.action-icon {
+    background: none !important;
+    border: none !important;
+    box-shadow: none !important;
+    
+    /* Colore come quello delle ore (var --gray-text) */
+    color: var(--gray-text) !important; 
+    
+    padding: 5px !important;
+    opacity: 0.6;
+    transition: opacity 0.2s, color 0.2s;
+}
+
+/* Al passaggio del mouse o tocco, l'icona si illumina senza creare blocchi */
+.action-icon:hover, .action-icon:active {
+    opacity: 1;
+    color: var(--accent-color) !important; /* Diventa del colore tema solo l'icona */
+}
+
+/* Rimuoviamo eventuali contenitori grigi dietro il gruppo icone */
+.row-actions {
+    background: transparent !important;
+}
+[data-theme="dark"] .action-icon {
+    /* Assicura che le icone siano visibili sul nero come la scritta delle ore */
+    color: var(--gray-text) !important; 
+}
+
+[data-theme="dark"] .weekly-day-header {
+    /* In dark mode la linea di separazione deve essere molto discreta */
+    border-bottom-color: rgba(255, 255, 255, 0.1) !important;
+}
+/* --- RIMOZIONE BLOCCO DIETRO IL TESTO NEL SETTIMANALE --- */
+
+.weekly-day-header .date-title {
+    background: transparent !important; /* Elimina il blocco celeste/grigio dietro il testo */
+    padding: 0 !important;              /* Rimuove lo spazio interno del vecchio blocco */
+    border: none !important;            /* Rimuove eventuali bordi */
+    box-shadow: none !important;        /* Rimuove ombre se presenti */
+    
+    /* Il testo ora poggia direttamente sulla riga lunga */
+    display: inline-block; 
+}
+
+/* Assicuriamoci che il blocco lungo (la riga) rimanga visibile */
+.weekly-day-header {
+    background: var(--secondary-bg) !important; /* Questo è il blocco lungo che separa i giorni */
+    padding: 10px 16px !important;              /* Spazio interno della riga */
+    border-radius: 5px;                        /* Angoli smussati della riga */
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+[data-theme="dark"] .weekly-day-header .date-title {
+    background: transparent !important; /* Forza la trasparenza totale in Dark Mode */
+}
+
+[data-theme="dark"] .weekly-day-header {
+    background: rgba(255, 255, 255, 0.05) !important; /* Mantiene la riga lunga scura */
+}
+/* --- UNIFORMITÀ TEXTAREA POP-UP --- */
+
+#quick-text {
+    /* Utilizziamo le variabili dinamiche per far sì che cambi con il tema */
+    background-color: var(--secondary-bg) !important; 
     color: var(--text-color) !important;
     border: 1px solid var(--border-color) !important;
+    
+    width: 100%;
+    min-height: 120px;
     border-radius: 12px;
-    padding: 15px !important;
-    margin-top: 15px;
+    padding: 15px;
     font-family: inherit;
     font-size: 1.1rem;
     resize: none;
@@ -808,68 +1205,19 @@ input[type="number"] {
     transition: background-color 0.3s, border-color 0.3s;
 }
 
+/* Stilizziamo il placeholder (il testo suggerito) per il tema scuro */
 #quick-text::placeholder {
     color: var(--gray-text);
     opacity: 0.6;
 }
 
+/* Feedback visivo quando si clicca per scrivere */
 #quick-text:focus {
     border-color: var(--accent-color) !important;
-    background-color: var(--bg-color) !important;
+    background-color: var(--bg-color) !important; /* Diventa leggermente più scuro/chiaro per dare profondità */
 }
 
+/* Correzione specifica per il tema scuro se necessario */
 [data-theme="dark"] #quick-text {
-    background-color: #2c2c2e !important;
-}
-
-/* ===================================
-   UTILITY
-   =================================== */
-
-.hidden {
-    display: none !important;
-}
-
-/* ===================================
-   RESPONSIVE
-   =================================== */
-
-@media (max-width: 768px) {
-    #app-container {
-        padding: 10px 15px 120px;
-    }
-    
-    header {
-        padding: 0 15px;
-    }
-}
-
-@media (max-width: 480px) {
-    header {
-        padding: 0 10px;
-        gap: 8px;
-    }
-    
-    .header-left,
-    .header-right {
-        gap: 10px;
-    }
-    
-    .nav-btn {
-        font-size: 2.2rem;
-    }
-    
-    .icon-btn svg {
-        width: 24px;
-        height: 24px;
-    }
-    
-    #app-container {
-        padding: 10px 10px 100px;
-    }
-    
-    .date-title {
-        font-size: 1rem;
-        padding: 6px 12px;
-    }
+    background-color: #2c2c2e !important; /* Un grigio leggermente più chiaro del fondo per contrasto */
 }
