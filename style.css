@@ -1194,3 +1194,39 @@ html, body {
   flex: 1; 
   min-width: 0; /* Evita che il contenuto interno forzi la larghezza */
 }
+html, body {
+    max-width: 100%;
+    overflow-x: hidden; /* Blocca categoricamente lo scivolamento laterale */
+    margin: 0;
+    padding: 0;
+    /* Gestione Notch iPhone/Android moderni */
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+}
+
+#app-container {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: hidden;
+}
+header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    padding: 0 10px;
+    box-sizing: border-box; /* Indispensabile */
+}
+
+.header-left, .header-right {
+    display: flex;
+    flex: 1; /* Distribuisce lo spazio equamente */
+    min-width: 0; /* Impedisce ai bottoni di forzare l'allargamento */
+}
+
+.header-right {
+    justify-content: flex-end;
+}
+* {
+    outline: 1px solid cyan !important;
+}
