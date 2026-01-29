@@ -2,14 +2,15 @@
 <html lang="it">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>OhMyBlock!</title>
     <link rel="stylesheet" href="style.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Roboto+Mono&display=swap" rel="stylesheet">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="theme-color" content="#007aff">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+</head>
+<body>
 <header>
     <div class="header-left">
         <button id="prevDay" class="nav-btn">←</button>
@@ -134,7 +135,6 @@
     Ora: 
     <input type="time" id="event-time-input">
 </label>
-<!-- La sezione wheel-picker-container può essere rimossa o rimarrà nascosta dal CSS -->
                 <div class="wheel-wrapper">
                     <div class="wheel-column" id="wheel-hours"></div>
                     <div class="wheel-separator">:</div>
@@ -154,8 +154,6 @@
   }
 </script>
 <link rel="manifest" href="/manifest.json">
-
-<script src="script.js"></script>
 
 </body>
 </html>
