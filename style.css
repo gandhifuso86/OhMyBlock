@@ -3,6 +3,7 @@
   margin: 0;
   padding: 0;
   box-sizing: border-box; /* FONDAMENTALE */
+  outline:none ;
 }
 
 /* 2. Impedisce lo scroll orizzontale accidentale sul body */
@@ -1273,7 +1274,5 @@ header {
         flex-direction: column !important; /* Forza la colonna su schermi piccoli */
     }
     
-    .header-left, .header-right {
-        gap: 5px; /* Stringe le icone su mobile */
-    }
+
 }
